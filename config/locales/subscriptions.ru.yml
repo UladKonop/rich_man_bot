@@ -1,0 +1,11 @@
+ru:
+  subscriptions:
+    month:
+      header: Подписка M
+      description: 1 месяц
+    three_month:
+      header: Подписка L
+      description: 3 месяца
+    six_month:
+      header: Подписка XL
+      description: 6 месяцев

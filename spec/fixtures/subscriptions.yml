@@ -1,0 +1,3 @@
+default:
+  user: default
+  payed_for: <%= DateTime.now + 5.days%>

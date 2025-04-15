@@ -1,0 +1,48 @@
+<!-- Button trigger modal -->
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal<%=id%>">
+  Купить
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal<%=id%>" tabindex="-1" role="dialog" aria-labelledby="exampleModal<%=id%>Label" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModal<%=id%>Label">Оплата</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <!-- Form -->
+      <form method="POST" action="https://money.yandex.ru/quickpay/confirm.xml">
+        <div class="modal-body">
+          <input type="hidden" name="receiver" value="<%= Rails.application.secrets.wallet_id %>" />
+          <input type="hidden" name="label" value="<%= subscription.label %>" />
+          <input type="hidden" name="quickpay-form" value="donate" />
+          <input type="hidden" name="targets" value="icetrade bot plan: <%= subscription.type %>" />
+          <input type="hidden" name="comment" value="Requires remote control." />
+          <input type="hidden" name="sum" value="<%= subscription.cost %>" data-type="number" />
+          <input type="hidden" name="need-fio" value="false" />
+          <input type="hidden" name="need-email" value="false" />
+          <input type="hidden" name="need-phone" value="false" /> <input type="hidden" name="need-address" value="false" />
+          <div class="form-check" style="margin-bottom:15px">
+            <label class="form-check-label" >
+              <input type="radio" name="paymentType" value="AC" />
+              Банковская карта
+            </label>
+          </div>
+          <div class="form-check">
+            <label class="form-check-label">
+              <input type="radio" name="paymentType" value="PC" />
+              Yandex.Money
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+          <input type="submit" class="btn btn-primary" value="Перевести" />
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

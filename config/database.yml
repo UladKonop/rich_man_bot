@@ -1,0 +1,22 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  # For details on connection pooling, see Rails configuration guide
+  # http://guides.rubyonrails.org/configuring.html#database-pooling
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  timeout: 5000
+  username: <%= ENV['DATABASE_USERNAME'] %>
+  password: <%= ENV['POSTGRES_PASSWORD'] %>
+  host: <%= ENV['DATABASE_HOSTNAME'] %>
+
+development:
+  <<: *default
+  database: new_icetrade_bot_development
+
+test:
+  <<: *default
+  database: new_icetrade_bot_test
+
+production:
+  <<: *default
+  database: new_icetrade_bot_production

@@ -1,0 +1,106 @@
+# Files in the config/locales directory are used for internationalization
+# and are automatically loaded by Rails. If you want to use locales other
+# than English, add the necessary files in this directory.
+#
+# To use the locales, use `I18n.t`:
+#
+#     I18n.t 'hello'
+#
+# In views, this is aliased to just `t`:
+#
+#     <%= t('hello') %>
+#
+# To use a different locale, set it with `I18n.locale`:
+#
+#     I18n.locale = :es
+#
+# This would use the information in config/locales/es.yml.
+#
+# The following keys must be escaped otherwise they will not be retrieved by
+# the default I18n backend:
+#
+# true, false, on, off, yes, no
+#
+# Instead, surround them with single quotes.
+#
+# en:
+#   'true': 'foo'
+#
+# To learn more, please read the Rails Internationalization guide
+# available at http://guides.rubyonrails.org/i18n.html.
+
+ru:
+  telegram_webhooks:
+    start:
+      hi: 'Привет %{name}!'
+    main_menu:
+      prompt: '*Главное Меню*'
+      buttons:
+        settings: Настройки
+        start_search: Начать мониторинг
+        stop_search: Остановить мониторинг
+        instruction: Инструкция
+        buy_subscription: Подписка
+    settings_inline_keyboard:
+      prompt: '*Выберите Опцию*'
+      choose_options:
+        change_keywords: Изменить ключевые слова
+        choose_industry: Выбрать отрасли
+    change_keywords: |
+      *Введите ключевые слова через запятую*
+      Текущие ключевые слова:
+      %{keywords}
+    apply_keywords:
+      done: |
+        *Новые ключевые слова:*
+        %{keywords}
+    reset_keywords:
+      done: '*Ключевые слова сброшены*: теперь бот не учитывает ключевые слова при мониторинге'
+      buttons:
+        done: Сбросить ключевые слова
+    choose_industry:
+      prompt: '*Выберите отрасли*'
+    apply_industry:
+      done: '*Отрасли выбраны*'
+      buttons:
+        done: Готово
+    reset_industry:
+      done: '*Все отрасли сброшены:* теперь бот будет отслеживать все отрасли'
+      buttons:
+        done: Сбросить все отрасли
+    buy:
+      prompt: Текущая подписка действует до %{date}
+      need_subscription: Сперва нужно оформить подписку
+      buy_button: Продлить
+      prompt_outdated: Подписка истекла %{date}
+    back_button: Назад
+    was_activated: Мониторинг успешно запущен
+    was_deactivated: Мониторинг завершен
+  instruction:
+    main: |
+        <b> Привет! Я Icetrade bot </b> — бот, который поможет Вам не пропустить новые тендеры на площадке icetrade.by
+
+        --------------------------------------
+
+        Сейчас я расскажу как со мной работать:
+
+        Вы можете настраивать мониторинг — для этого нажмите на кнопку "<code>Настройки</code>" ниже.
+
+        <b>Настройки:</b>
+        %{point} <u><b><i>Изменить ключевые слова</i></b></u>
+        Если ключевые слова заданы — я буду извещать только о тех тендерах, в описании или названии которых встречаются эти слова. Если сборошены (по умолчанию они сброшены) — я просто не буду их учитывать при мониторинге.
+
+        %{point} <u><b><i>Выбрать отрасли</i></b></u>
+        Если отрасли заданы — я буду извещать только о тех тендерах, которые относятся к выбранным отрослям. Если сборошены (по умолчанию они сброшены) — я просто не буду их учитывать при мониторинге.
+
+        <i>Когда ключевые слова и отрасли сброшены — я буду извещать о всех тендерах.</i>
+
+        Теперь нажмите "<code>Начать мониторинг</code>"
+
+        <b>Ура! Все готово.</b>
+
+        --------------------------------------
+
+        <i>Тестовый период действует в течение 10 дней.</i>
+        <i>После истечения тестового периода Вы прекратите получать уведомления о новых тендерах.</i>
+        <i>Для продолжения использования необходимо оформить подписку.</i>

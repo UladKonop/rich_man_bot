@@ -1,0 +1,9 @@
+<div class = "container" style="margin-top:100px" >
+  <div class="row">
+    <% @subscriptions.each do |s| %>
+      <div class="col-sm-4">
+        <%= render('subscription_card', subscription: s) %>
+      </div>
+    <% end %>
+  </div>
+</div>

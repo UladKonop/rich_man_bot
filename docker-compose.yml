@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  web:
+    build:
+      context: .
+    image: "deluxe:one-ingest"
+    # command: /bin/bash -c "bin/rails telegram:bot:poller && bin/delayed_job start"
+    command: /bin/bash -c "rm -f /tmp/server.pid && bundle exec rails server -b 0.0.0.0 -P /tmp/server.pid"
+    env_file: .env
+    depends_on:
+      - db
+    ports:
+      - 3000:3000
+    volumes:
+      - .:/app:cached
+    tty: true
+    stdin_open: true
+
+  db:
+    image: postgres:latest
+    env_file: .env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+volumes:
+  db_data:
