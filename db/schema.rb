@@ -10,9 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2020_09_01_081624) do
+ActiveRecord::Schema[7.1].define(version: 2024_03_16_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "categories", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "icon"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_categories_on_name", unique: true
+  end
 
   create_table "delayed_jobs", force: :cascade do |t|
     t.integer "priority", default: 0, null: false
@@ -28,6 +36,19 @@ ActiveRecord::Schema[7.1].define(version: 2020_09_01_081624) do
     t.datetime "updated_at"
     t.string "cron"
     t.index ["priority", "run_at"], name: "delayed_jobs_priority"
+  end
+
+  create_table "expenses", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "category_id", null: false
+    t.decimal "amount", precision: 10, scale: 2, null: false
+    t.text "description"
+    t.date "date", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_expenses_on_category_id"
+    t.index ["date"], name: "index_expenses_on_date"
+    t.index ["user_id"], name: "index_expenses_on_user_id"
   end
 
   create_table "payments", force: :cascade do |t|
@@ -68,6 +89,8 @@ ActiveRecord::Schema[7.1].define(version: 2020_09_01_081624) do
     t.datetime "updated_at", null: false
   end
 
+  add_foreign_key "expenses", "categories"
+  add_foreign_key "expenses", "users"
   add_foreign_key "payments", "subscriptions"
   add_foreign_key "subscriptions", "users"
 end
