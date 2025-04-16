@@ -38,7 +38,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def message(message)
-    if context == :add_expense
+    if session[:context] == :add_expense
       handle_add_expense(message.text)
     else
       show_main_menu
@@ -110,11 +110,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     )
   end
 
-  private
-
-  def find_user
-    @user = User.find_or_create_by(chat_id: chat['id'])
-    @user.update(name: chat['username']) unless @user.name.present?
+  def add_expense(*)
+    handle_add_expense(payload['text'])
   end
 
   def handle_add_expense(text)
@@ -138,6 +135,13 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     else
       show_main_menu(translation('invalid_expense_format'))
     end
+  end
+
+  private
+
+  def find_user
+    @user = User.find_or_create_by(chat_id: chat['id'])
+    @user.update(name: chat['username']) unless @user.name.present?
   end
 
   def respond_with_markdown_message(params = {})
@@ -193,7 +197,12 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def main_menu_buttons
-    t('telegram_webhooks.main_menu.buttons')
+    {
+      expenses: translation('main_menu.buttons.expenses'),
+      add_expense: translation('main_menu.buttons.add_expense'),
+      instruction: translation('main_menu.buttons.instruction'),
+      settings: translation('main_menu.buttons.settings')
+    }
   end
 
   def translation(path, params = {})
@@ -207,5 +216,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def invoke_action(action, *args)
     send(action, *args) if respond_to?(action, true)
+  end
+
+  def save_context(context)
+    session[:context] = context
   end
 end
