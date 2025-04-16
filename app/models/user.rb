@@ -3,8 +3,23 @@
 class User < ApplicationRecord
   has_one :setting, dependent: :destroy
   has_one :subscription, dependent: :destroy
+  has_many :expenses, dependent: :destroy
 
   before_create :initialize_setting, :initialize_subscription
+
+  validates :chat_id, presence: true, uniqueness: true
+
+  def expenses_by_category(category_id = nil)
+    expenses = self.expenses.by_date
+    expenses = expenses.for_category(category_id) if category_id
+    expenses
+  end
+
+  def total_expenses(category_id = nil)
+    expenses = self.expenses
+    expenses = expenses.for_category(category_id) if category_id
+    expenses.total_amount
+  end
 
   private
 
