@@ -144,18 +144,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     @user.update(name: chat['username']) unless @user.name.present?
   end
 
-  def respond_with_markdown_message(params = {})
-    Rails.logger.debug "Original params: #{params.inspect}"
-    
-    text = params[:text]
-    if text.present?
-      Rails.logger.debug "Original text: #{text.inspect}"
-      Rails.logger.debug "Text bytes: #{text.bytes.inspect}"
-    end
-    
-    response = respond_with :message, params.merge(parse_mode: 'Markdown')
-    Rails.logger.debug "Response: #{response.inspect}"
-    response
+  def respond_with_markdown_message(params = {})     
+    respond_with :message, params.merge(parse_mode: 'Markdown')
   end
 
   def main_keyboard_markup
