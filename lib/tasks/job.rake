@@ -8,8 +8,12 @@ namespace :db do
   end
 end
 
-%w(db:migrate db:schema:load telegram:bot:poller).each do |task|
-  Rake::Task[task].enhance do
-    Rake::Task['db:schedule_jobs'].invoke
-  end
-end
+# The code below enhances several rake tasks (db:migrate, db:schema:load, telegram:bot:poller)
+# by adding db:schedule_jobs task to run after them.
+# This ensures that cron jobs are scheduled whenever database is updated or bot poller is started.
+#
+# %w(db:migrate db:schema:load telegram:bot:poller).each do |task|
+#   Rake::Task[task].enhance do
+#     Rake::Task['db:schedule_jobs'].invoke
+#   end
+# end
