@@ -1,0 +1,1 @@
+Telegram.bots[:default] = Telegram::Bot::Client.new(Rails.application.credentials.telegram_bot_token) 
