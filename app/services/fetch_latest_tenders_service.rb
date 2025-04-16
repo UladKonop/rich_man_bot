@@ -19,7 +19,7 @@ class FetchLatestTendersService
   private
 
   def page_body(url)
-    response = Typhoeus.get(url, PROXY_OPTIONS)
+    # response = Typhoeus.get(url, PROXY_OPTIONS)
     
     raise "Bad request #{response.code}: #{url}" unless response.code.between?(200, 300)
 

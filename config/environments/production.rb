@@ -73,5 +73,5 @@ Rails.application.configure do
   config.active_record.dump_schema_after_migration = false
 
   # setup webhooks
-  routes.default_url_options = { host: 'icetradebot.space', protocol: 'https' }
+  routes.default_url_options = { host: 'richmanbot.space', protocol: 'https' }
 end

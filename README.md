@@ -25,7 +25,7 @@ https://api.telegram.org/botTOKEN/setWebhook - remove webhook for poller using
 https://core.telegram.org/bots/webhooks
 https://github.com/steveltn/https-portal
 ```ruby
-url = "https://icetradebot.space/telegram/TOKEN"
+url = "https://richmanbot.space/telegram/TOKEN"
 Telegram.bot.set_webhook(url: url)
 Telegram.bot.set_webhook(url: url, certificate: File.open('./YOURPUBLIC.pem'))
 Telegram.bot.delete_webhook

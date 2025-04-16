@@ -11,12 +11,12 @@ default: &default
 
 development:
   <<: *default
-  database: new_icetrade_bot_development
+  database: rich_man_bot_development
 
 test:
   <<: *default
-  database: new_icetrade_bot_test
+  database: rich_man_bot_test
 
 production:
   <<: *default
-  database: new_icetrade_bot_production
+  database: rich_man_bot_production

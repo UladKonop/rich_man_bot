@@ -8,7 +8,7 @@ services:
     volumes:
       - /data/ssl_certs:/var/lib/https-portal
     environment:
-      DOMAINS: 'icetradebot.space -> http://web:3000'
+      DOMAINS: 'richmanbot.space -> http://web:3000'
       STAGE: 'production'
     restart: always
     depends_on:
@@ -16,7 +16,7 @@ services:
   web:
     build:
       context: .
-    image: "icetrade-bot"
+    image: "rich-man-bot"
     command: /bin/bash -c "rm -f /tmp/server.pid && bundle exec rails server -b 0.0.0.0 -P /tmp/server.pid"
     env_file: .env
     environment:
@@ -27,7 +27,7 @@ services:
     tty: true
     stdin_open: true
   # poller:
-  #   image: "icetrade-bot"
+  #   image: "rich-man-bot"
   #   command: /bin/bash -c "bin/delayed_job start && bin/rails telegram:bot:poller"
   #   env_file: .env
   #   environment:
