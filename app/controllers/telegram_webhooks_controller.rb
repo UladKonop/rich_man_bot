@@ -50,6 +50,14 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       category_id = action.split('_').last
       category_id = category_id == 'all' ? nil : category_id.to_i
       show_expenses_for_category(category_id)
+    elsif action.start_with?('select_category_')
+      category_id = action.split('_').last.to_i
+      save_context :add_expense
+      session[:selected_category_id] = category_id
+      respond_with_markdown_message(
+        text: translation('add_expense.enter_amount'),
+        reply_markup: back_button_inline('show_add_expense')
+      )
     else
       invoke_action(action)
     end
@@ -66,10 +74,19 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def show_add_expense
-    save_context :add_expense
+    save_context :select_category
+    categories_buttons = Category.ordered.map do |category|
+      [{ text: "#{category.icon} #{category.name}", callback_data: "select_category_#{category.id}" }]
+    end
+
     respond_with_markdown_message(
-      text: translation('add_expense.prompt'),
-      reply_markup: back_button_inline('keyboard!')
+      text: translation('add_expense.select_category'),
+      reply_markup: {
+        inline_keyboard: [
+          *categories_buttons,
+          back_button('keyboard!')
+        ]
+      }
     )
   end
 
@@ -115,17 +132,14 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def handle_add_expense(text)
-    # Формат: сумма категория описание
-    parts = text.split(' ', 3)
-    amount = parts[0].to_f
-    category_name = parts[1]
-    description = parts[2]
-
-    category = Category.find_by('lower(name) = ?', category_name.downcase)
+    parts = text.split(' ', 2)
+    amount = parts[0].gsub(',', '.').to_f
+    description = parts[1]
+    category_id = session[:selected_category_id]
     
-    if category && amount > 0
+    if amount > 0 && category_id
       expense_service = ExpenseService.new(@user)
-      result = expense_service.add_expense(category.id, amount, description)
+      result = expense_service.add_expense(category_id, amount, description)
       
       if result[:success]
         show_main_menu(translation('expense_added'))
@@ -133,7 +147,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         show_main_menu(translation('expense_error', errors: result[:errors].join(', ')))
       end
     else
-      show_main_menu(translation('invalid_expense_format'))
+      show_main_menu(translation('invalid_amount'))
     end
   end
 
