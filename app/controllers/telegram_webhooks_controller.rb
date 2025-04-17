@@ -22,8 +22,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def keyboard!(value = nil, *)
     if value
-      show_expenses_menu if main_menu_buttons[:expenses].include?(value)
       show_add_expense if main_menu_buttons[:add_expense].include?(value)
+      show_expenses_menu if main_menu_buttons[:expenses].include?(value)
       show_instruction if main_menu_buttons[:instruction].include?(value)
       show_settings_menu if main_menu_buttons[:settings].include?(value)
       # buy_subscription if main_menu_buttons[:buy_subscription].include?(value)
@@ -165,8 +165,12 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     expenses_button = "#{main_menu_buttons[:expenses]} #{ICONS[:money]}"
     add_expense_button = "#{main_menu_buttons[:add_expense]} #{ICONS[:credit_card]}"
     instruction_button = "#{main_menu_buttons[:instruction]} #{ICONS[:instruction]}"
+    settings_button = "#{main_menu_buttons[:settings]} #{ICONS[:settings]}"
 
-    buttons = [[expenses_button, add_expense_button], [instruction_button]]
+    buttons = [
+      [add_expense_button, expenses_button],
+      [settings_button, instruction_button]
+    ]
     {
       keyboard: buttons,
       resize_keyboard: true,
