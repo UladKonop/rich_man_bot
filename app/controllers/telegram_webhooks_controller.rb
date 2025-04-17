@@ -39,6 +39,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def message(message)
     if session[:context] == :add_expense
       handle_add_expense(message.text)
+    elsif session[:context] == :change_currency!
+      @user.setting.update(currency: message.text)
+      show_settings_menu
     else
       show_main_menu
     end
@@ -57,6 +60,30 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         text: translation('add_expense.enter_amount'),
         reply_markup: back_button_inline('show_add_expense')
       )
+    elsif action == 'change_currency'
+      save_context :change_currency!
+      respond_with_markdown_message(
+        text: "Введите символ или текст валюты (например: BYN, ₽, $, €):",
+        reply_markup: back_button_inline('show_settings_menu')
+      )
+    elsif action == 'change_language'
+      save_context :change_language
+      respond_with_markdown_message(
+        text: "Выберите язык:\n🇷🇺 Русский\n🇬🇧 English",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: '🇷🇺 Русский', callback_data: 'set_language_ru' },
+              { text: '🇬🇧 English', callback_data: 'set_language_en' }
+            ],
+            back_button('show_settings_menu')
+          ]
+        }
+      )
+    elsif action.start_with?('set_language_')
+      language = action.split('_').last
+      @user.setting.update(language: language)
+      show_settings_menu
     else
       invoke_action(action)
     end
@@ -150,6 +177,11 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     end
   end
 
+  def change_currency!(*)
+    @user.setting.update(currency: payload['text'])
+    show_settings_menu
+  end
+
   private
 
   def find_user
@@ -227,5 +259,16 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def save_context(context)
     session[:context] = context
+  end
+
+  def update_settings_keyboard_markup
+    {
+      inline_keyboard: [
+        [
+          { text: "💰 Валюта: #{@user.setting.currency || 'BYN'}", callback_data: 'change_currency' }
+        ],
+        back_button('keyboard!')
+      ]
+    }
   end
 end

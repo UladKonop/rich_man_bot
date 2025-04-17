@@ -33,6 +33,7 @@ class ExpenseService
     expenses = expenses_data[:expenses]
     total = expenses_data[:total]
     category = expenses_data[:category]
+    currency = @user.setting.currency
 
     message = []
     message << "*#{category ? category.name : 'Все категории'}*"
@@ -40,7 +41,7 @@ class ExpenseService
 
     if expenses.any?
       expenses.each do |expense|
-        message << "💰 #{expense.amount} BYN"
+        message << "💰 #{expense.amount} #{currency}"
         message << "📅 #{expense.date.strftime('%d.%m.%Y')}"
         message << "📝 #{expense.description}" if expense.description.present?
         message << "---"
@@ -50,7 +51,7 @@ class ExpenseService
     end
 
     message << ""
-    message << "*Итого: #{total} BYN*"
+    message << "*Итого: #{total} #{currency}*"
 
     message.join("\n")
   end

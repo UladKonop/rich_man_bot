@@ -65,9 +65,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_16_000002) do
 
   create_table "settings", force: :cascade do |t|
     t.bigint "user_id"
-    t.jsonb "filters"
-    t.integer "last_sended_tender_id"
-    t.string "keywords", default: [], array: true
+    t.string "currency"
+    t.string "language"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "active", default: false
