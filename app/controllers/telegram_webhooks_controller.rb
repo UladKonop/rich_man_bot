@@ -27,7 +27,6 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       show_instruction if main_menu_buttons[:instruction].include?(value)
       show_settings_menu if main_menu_buttons[:settings].include?(value)
       # buy_subscription if main_menu_buttons[:buy_subscription].include?(value)
-      show_instruction if main_menu_buttons[:instruction].include?(value)
     else
       show_main_menu
     end
