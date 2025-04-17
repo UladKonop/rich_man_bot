@@ -199,10 +199,14 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     instruction_button = "#{main_menu_buttons[:instruction]} #{ICONS[:instruction]}"
     settings_button = "#{main_menu_buttons[:settings]} #{ICONS[:settings]}"
 
-    buttons = [
-      [add_expense_button, expenses_button],
-      [settings_button, instruction_button]
-    ]
+    buttons = []
+    if @user.setting.active?
+      buttons << [add_expense_button, expenses_button]
+    else
+      buttons << [expenses_button]
+    end
+    buttons << [settings_button, instruction_button]
+
     {
       keyboard: buttons,
       resize_keyboard: true,
