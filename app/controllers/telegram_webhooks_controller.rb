@@ -63,27 +63,14 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     elsif action == 'change_currency'
       save_context :change_currency!
       respond_with_markdown_message(
-        text: "Введите символ или текст валюты (например: BYN, ₽, $, €):",
+        text: translation('settings.currency.prompt'),
         reply_markup: back_button_inline('show_settings_menu')
       )
-    elsif action == 'change_language'
-      save_context :change_language
+    elsif action == 'show_language_info'
       respond_with_markdown_message(
-        text: "Выберите язык:\n🇷🇺 Русский\n🇬🇧 English",
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: '🇷🇺 Русский', callback_data: 'set_language_ru' },
-              { text: '🇬🇧 English', callback_data: 'set_language_en' }
-            ],
-            back_button('show_settings_menu')
-          ]
-        }
+        text: translation('settings.language.info', language: @user.setting.language || 'ru'),
+        reply_markup: back_button_inline('show_settings_menu')
       )
-    elsif action.start_with?('set_language_')
-      language = action.split('_').last
-      @user.setting.update(language: language)
-      show_settings_menu
     else
       invoke_action(action)
     end
@@ -269,7 +256,10 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     {
       inline_keyboard: [
         [
-          { text: "💰 Валюта: #{@user.setting.currency || 'BYN'}", callback_data: 'change_currency' }
+          { text: translation('settings.currency.current', currency: @user.setting.currency || 'BYN'), callback_data: 'change_currency' }
+        ],
+        [
+          { text: translation('settings.language.current', language: @user.setting.language || 'ru'), callback_data: 'show_language_info' }
         ],
         back_button('keyboard!')
       ]
