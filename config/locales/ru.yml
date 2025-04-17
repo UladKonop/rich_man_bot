@@ -43,21 +43,7 @@ ru:
         buy_subscription: Подписка
     settings_inline_keyboard:
       prompt: '*Выберите Опцию*'
-      choose_options:
-        change_keywords: Изменить ключевые слова
-        choose_industry: Выбрать отрасли
-    change_keywords: |
-      *Введите ключевые слова через запятую*
-      Текущие ключевые слова:
-      %{keywords}
-    apply_keywords:
-      done: |
-        *Новые ключевые слова:*
-        %{keywords}
-    reset_keywords:
-      done: '*Ключевые слова сброшены*: теперь бот не учитывает ключевые слова при мониторинге'
-      buttons:
-        done: Сбросить ключевые слова
+      # choose_options:
     buy:
       prompt: Текущая подписка действует до %{date}
       need_subscription: Сперва нужно оформить подписку
