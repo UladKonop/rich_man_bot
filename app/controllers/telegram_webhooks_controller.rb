@@ -73,7 +73,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
           inline_keyboard: [
             [
               { text: translation('settings.language.russian'), callback_data: 'set_language_ru' },
-              { text: translation('settings.language.english'), callback_data: 'set_language_en' }
+              { text: translation('settings.language.english'), callback_data: 'set_language_en' },
+              { text: translation('settings.language.belarusian'), callback_data: 'set_language_be' }
             ],
             back_button('show_settings_menu')
           ]

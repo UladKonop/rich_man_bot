@@ -71,6 +71,7 @@ en:
         select: "Choose language:"
         russian: "🇷🇺 Russian"
         english: "🇬🇧 English"
+        belarusian: "🤍❤️🤍 Belarusian"
         changed: "Language changed to %{language}"
     categories:
       food: "🍔 Food"

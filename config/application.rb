@@ -41,8 +41,8 @@ module RichManBot
     config.api_only = true
 
     config.i18n.load_path += Dir[File.expand_path("config/locales") + "/*.yml"]
-    config.i18n.default_locale = :ru
-    config.i18n.available_locales = [:en, :ru]
+    config.i18n.default_locale = :be
+    config.i18n.available_locales = [:en, :ru, :be]
 
     config.read_encrypted_secrets = true
   end
