@@ -68,9 +68,22 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       )
     elsif action == 'show_language_info'
       respond_with_markdown_message(
-        text: translation('settings.language.info', language: @user.setting.language || 'ru'),
-        reply_markup: back_button_inline('show_settings_menu')
+        text: translation('settings.language.select'),
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: translation('settings.language.russian'), callback_data: 'set_language_ru' },
+              { text: translation('settings.language.english'), callback_data: 'set_language_en' }
+            ],
+            back_button('show_settings_menu')
+          ]
+        }
       )
+    elsif action.start_with?('set_language_')
+      language = action.split('_').last
+      @user.setting.update(language: language)
+      I18n.locale = language.to_sym
+      show_settings_menu(translation('settings.language.changed', language: language))
     else
       invoke_action(action)
     end
@@ -127,9 +140,13 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     respond_with_markdown_message(text: text, reply_markup: main_keyboard_markup)
   end
 
-  def show_settings_menu
+  def show_settings_menu(message = nil)
     save_context :keyboard!
-    respond_with_markdown_message(text: translation('settings_inline_keyboard.prompt'), reply_markup: update_settings_keyboard_markup)
+    text = message || translation('settings.prompt')
+    respond_with_markdown_message(
+      text: text,
+      reply_markup: update_settings_keyboard_markup
+    )
   end
 
   def show_instruction
@@ -174,10 +191,17 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def find_user
     @user = User.find_or_create_by(chat_id: chat['id'])
     @user.update(name: chat['username']) unless @user.name.present?
+    I18n.locale = @user.setting.language&.to_sym || :ru
   end
 
-  def respond_with_markdown_message(params = {})     
-    respond_with :message, params.merge(parse_mode: 'Markdown')
+  def respond_with_markdown_message(params = {})
+    Rails.logger.debug "Original params: #{params.inspect}"
+    Rails.logger.debug "Original text: #{params[:text]}"
+    Rails.logger.debug "Text bytes: #{params[:text].bytes.inspect}"
+    
+    response = respond_with :message, params.merge(parse_mode: 'Markdown')
+    Rails.logger.debug "Response: #{response.inspect}"
+    response
   end
 
   def main_keyboard_markup
@@ -236,11 +260,15 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def translation(path, params = {})
+    Rails.logger.debug "Current locale: #{I18n.locale}"
+    Rails.logger.debug "Available locales: #{I18n.available_locales.inspect}"
+    Rails.logger.debug "Looking for translation at: telegram_webhooks.#{path}"
+    Rails.logger.debug "Translation exists? #{I18n.exists?("telegram_webhooks.#{path}")}"
+    
     if params.empty?
       t("telegram_webhooks.#{path}")
     else
-      key, value = params.first
-      t("telegram_webhooks.#{path}", key.to_sym => value)
+      t("telegram_webhooks.#{path}", **params)
     end
   end
 
@@ -256,7 +284,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     {
       inline_keyboard: [
         [
-          { text: translation('settings.currency.current', currency: @user.setting.currency || 'BYN'), callback_data: 'change_currency' }
+          { text: translation('settings.currency.current', currency: @user.setting.currency), callback_data: 'change_currency' }
         ],
         [
           { text: translation('settings.language.current', language: @user.setting.language || 'ru'), callback_data: 'show_language_info' }
