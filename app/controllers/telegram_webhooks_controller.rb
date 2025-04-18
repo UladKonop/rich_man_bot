@@ -102,7 +102,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def show_add_expense
     save_context :select_category
     categories_buttons = Category.ordered.map do |category|
-      [{ text: "#{category.icon} #{category.name}", callback_data: "select_category_#{category.id}" }]
+      [{ text: category.display_name, callback_data: "select_category_#{category.id}" }]
     end
 
     respond_with_markdown_message(
@@ -228,10 +228,10 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def expenses_menu_keyboard_markup
     categories_buttons = Category.ordered.map do |category|
-      { text: "#{category.icon} #{category.name}", callback_data: "category_#{category.id}" }
+      { text: category.display_name, callback_data: "category_#{category.id}" }
     end
 
-    all_expenses_button = { text: "#{ICONS[:list]} Все расходы", callback_data: "category_all" }
+    all_expenses_button = { text: "#{ICONS[:list]} #{translation('expenses_menu.all')}", callback_data: "category_all" }
 
     {
       inline_keyboard: [

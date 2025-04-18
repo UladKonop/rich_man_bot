@@ -8,15 +8,15 @@
 
 # Initial categories
 categories = [
-  { name: 'Продукты', icon: '🛒' },
-  { name: 'Транспорт', icon: '🚗' },
-  { name: 'Жилье', icon: '🏠' },
-  { name: 'Развлечения', icon: '🎮' },
-  { name: 'Здоровье', icon: '💊' },
-  { name: 'Одежда', icon: '👕' },
-  { name: 'Образование', icon: '📚' },
-  { name: 'Подарки', icon: '🎁' },
-  { name: 'Другое', icon: '📦' }
+  { name: 'food', icon: '🍔' },
+  { name: 'transport', icon: '🚗' },
+  { name: 'housing', icon: '🏠' },
+  { name: 'entertainment', icon: '🎮' },
+  { name: 'shopping', icon: '🛍️' },
+  { name: 'health', icon: '💊' },
+  { name: 'education', icon: '📚' },
+  { name: 'gifts', icon: '🎁' },
+  { name: 'other', icon: '📦' }
 ]
 
 categories.each do |category|

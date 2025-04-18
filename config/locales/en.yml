@@ -49,6 +49,7 @@ en:
     back_button: "Back"
     expenses_menu:
       prompt: "Choose expense category:"
+      all: "All expenses"
     add_expense:
       select_category: "Choose expense category:"
       enter_amount: "Enter the amount (you can add a description with a space):"
@@ -71,3 +72,14 @@ en:
         russian: "🇷🇺 Russian"
         english: "🇬🇧 English"
         changed: "Language changed to %{language}"
+    categories:
+      food: "🍔 Food"
+      transport: "🚗 Transport"
+      entertainment: "🎮 Entertainment"
+      shopping: "🛍️ Shopping"
+      health: "💊 Health"
+      housing: "🏠 Housing"
+      clothing: "👕 Clothing"
+      education: "📚 Education"
+      gifts: "🎁 Gifts"
+      other: "📦 Other"
