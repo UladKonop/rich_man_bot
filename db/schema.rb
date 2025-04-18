@@ -69,7 +69,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_16_000002) do
     t.string "language"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.boolean "active", default: false
+    t.boolean "active", default: true
     t.index ["user_id"], name: "index_settings_on_user_id"
   end
 
