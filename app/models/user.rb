@@ -11,12 +11,14 @@ class User < ApplicationRecord
 
   def expenses_by_category(category_id = nil)
     expenses = self.expenses.by_date
+                  .between_dates(Date.current.beginning_of_month, Date.current.end_of_month)
     expenses = expenses.for_category(category_id) if category_id
     expenses
   end
 
   def total_expenses(category_id = nil)
     expenses = self.expenses
+                  .between_dates(Date.current.beginning_of_month, Date.current.end_of_month)
     expenses = expenses.for_category(category_id) if category_id
     expenses.total_amount
   end

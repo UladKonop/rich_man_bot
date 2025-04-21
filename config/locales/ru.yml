@@ -30,6 +30,10 @@
 # available at http://guides.rubyonrails.org/i18n.html.
 
 ru:
+  date:
+    formats:
+      default: "%d.%m.%Y"
+    month_names: [~, Январь, Февраль, Март, Апрель, Май, Июнь, Июль, Август, Сентябрь, Октябрь, Ноябрь, Декабрь]
   telegram_webhooks:
     start:
       hi: 'Привет %{name}!'
@@ -84,3 +88,13 @@ ru:
       education: "📚 Образование"
       gifts: "🎁 Подарки"
       other: "📦 Другое"
+    expenses:
+      report:
+        all_categories: "Все категории"
+        no_expenses: "Нет расходов"
+        total: "Итого: %{amount} %{currency}"
+        expense:
+          amount: "💰 %{amount} %{currency}"
+          date: "📅 %{date}"
+          description: "📝 %{text}"
+          separator: "---"

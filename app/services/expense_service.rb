@@ -34,24 +34,26 @@ class ExpenseService
     total = expenses_data[:total]
     category = expenses_data[:category]
     currency = @user.setting.currency
+    current_month = I18n.l(Date.current, format: '%B %Y')
 
     message = []
-    message << "*#{category ? category.name : 'Все категории'}*"
+    message << "*#{category ? category.display_name : I18n.t('telegram_webhooks.expenses.report.all_categories')}*"
+    message << "*#{current_month}*"
     message << ""
 
     if expenses.any?
       expenses.each do |expense|
-        message << "💰 #{expense.amount} #{currency}"
-        message << "📅 #{expense.date.strftime('%d.%m.%Y')}"
-        message << "📝 #{expense.description}" if expense.description.present?
-        message << "---"
+        message << I18n.t('telegram_webhooks.expenses.report.expense.amount', amount: expense.amount, currency: currency)
+        message << I18n.t('telegram_webhooks.expenses.report.expense.date', date: I18n.l(expense.date, format: '%d.%m.%Y'))
+        message << I18n.t('telegram_webhooks.expenses.report.expense.description', text: expense.description) if expense.description.present?
+        message << I18n.t('telegram_webhooks.expenses.report.expense.separator')
       end
     else
-      message << "Нет расходов"
+      message << I18n.t('telegram_webhooks.expenses.report.no_expenses')
     end
 
     message << ""
-    message << "*Итого: #{total} #{currency}*"
+    message << "*#{I18n.t('telegram_webhooks.expenses.report.total', amount: total, currency: currency)}*"
 
     message.join("\n")
   end
