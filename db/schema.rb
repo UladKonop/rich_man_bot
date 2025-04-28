@@ -14,14 +14,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_16_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
-  create_table "categories", force: :cascade do |t|
-    t.string "name", null: false
-    t.string "icon"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_categories_on_name", unique: true
-  end
-
   create_table "delayed_jobs", force: :cascade do |t|
     t.integer "priority", default: 0, null: false
     t.integer "attempts", default: 0, null: false
@@ -40,14 +32,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_16_000002) do
 
   create_table "expenses", force: :cascade do |t|
     t.bigint "user_id", null: false
-    t.bigint "category_id", null: false
+    t.bigint "user_category_id"
     t.decimal "amount", precision: 10, scale: 2, null: false
     t.text "description"
     t.date "date", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["category_id"], name: "index_expenses_on_category_id"
     t.index ["date"], name: "index_expenses_on_date"
+    t.index ["user_category_id"], name: "index_expenses_on_user_category_id"
     t.index ["user_id"], name: "index_expenses_on_user_id"
   end
 
@@ -81,6 +73,16 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_16_000002) do
     t.index ["user_id"], name: "index_subscriptions_on_user_id"
   end
 
+  create_table "user_categories", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "name", null: false
+    t.string "emoji", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "name"], name: "index_user_categories_on_user_id_and_name", unique: true
+    t.index ["user_id"], name: "index_user_categories_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "name"
     t.bigint "chat_id"
@@ -88,8 +90,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_16_000002) do
     t.datetime "updated_at", null: false
   end
 
-  add_foreign_key "expenses", "categories"
+  add_foreign_key "expenses", "user_categories"
   add_foreign_key "expenses", "users"
   add_foreign_key "payments", "subscriptions"
   add_foreign_key "subscriptions", "users"
+  add_foreign_key "user_categories", "users"
 end

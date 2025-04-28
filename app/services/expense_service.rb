@@ -3,14 +3,13 @@ class ExpenseService
     @user = user
   end
 
-  def add_expense(category_id, amount, description = nil, date = Date.current)
-    expense = @user.expenses.build(
-      category_id: category_id,
+  def add_expense(category_id, amount, description, date = Date.current)
+    expense = @user.expenses.new(
       amount: amount,
       description: description,
+      user_category_id: category_id,
       date: date
     )
-
     if expense.save
       { success: true, expense: expense }
     else
@@ -18,33 +17,43 @@ class ExpenseService
     end
   end
 
-  def get_expenses(category_id = nil)
-    expenses = @user.expenses_by_category(category_id)
-    total = @user.total_expenses(category_id)
+  def get_expenses_report(category_id = nil, start_date = Date.current.beginning_of_month, end_date = Date.current.end_of_month)
+    expenses = @user.expenses
+                    .between_dates(start_date, end_date)
+    expenses = expenses.for_category(category_id) if category_id
 
-    {
-      expenses: expenses,
-      total: total,
-      category: category_id ? Category.find_by(id: category_id) : nil
-    }
+    total = expenses.total_amount
+    message = format_report_message(expenses, category_id, total, start_date, end_date)
+    [message, total]
   end
 
-  def format_expenses_report(expenses_data)
-    expenses = expenses_data[:expenses]
-    total = expenses_data[:total]
-    category = expenses_data[:category]
-    currency = @user.setting.currency
-    current_month = I18n.l(Date.current, format: '%B %Y')
+  private
 
+  def format_expense_message(expense)
+    category = expense.user_category
+    I18n.t('telegram_webhooks.expenses.added',
+           amount: format_amount(expense.amount),
+           category: category ? category.display_name : I18n.t('telegram_webhooks.expenses.no_category'),
+           description: expense.description)
+  end
+
+  def format_report_message(expenses, category_id, total, start_date = Date.current.beginning_of_month, end_date = Date.current.end_of_month)
+    category = category_id ? @user.user_categories.find_by(id: category_id) : nil
     message = []
+    
+    # Header section
     message << "*#{category ? category.display_name : I18n.t('telegram_webhooks.expenses.report.all_categories')}*"
-    message << "*#{current_month}*"
+    message << I18n.t('telegram_webhooks.expenses.report.period',
+                     start_date: start_date.strftime('%d.%m.%Y'),
+                     end_date: end_date.strftime('%d.%m.%Y'))
+    message << I18n.t('telegram_webhooks.expenses.report.total', amount: format_amount(total), currency: @user.setting.currency)
     message << ""
 
+    # Expenses section
     if expenses.any?
-      expenses.each do |expense|
-        message << I18n.t('telegram_webhooks.expenses.report.expense.amount', amount: expense.amount, currency: currency)
-        message << I18n.t('telegram_webhooks.expenses.report.expense.date', date: I18n.l(expense.date, format: '%d.%m.%Y'))
+      expenses.order(date: :desc).each do |expense|
+        message << I18n.t('telegram_webhooks.expenses.report.expense.amount', amount: format_amount(expense.amount), currency: @user.setting.currency)
+        message << I18n.t('telegram_webhooks.expenses.report.expense.date', date: expense.date.strftime('%d.%m.%Y'))
         message << I18n.t('telegram_webhooks.expenses.report.expense.description', text: expense.description) if expense.description.present?
         message << I18n.t('telegram_webhooks.expenses.report.expense.separator')
       end
@@ -52,9 +61,10 @@ class ExpenseService
       message << I18n.t('telegram_webhooks.expenses.report.no_expenses')
     end
 
-    message << ""
-    message << "*#{I18n.t('telegram_webhooks.expenses.report.total', amount: total, currency: currency)}*"
-
     message.join("\n")
   end
-end 
+
+  def format_amount(amount)
+    format('%.2f', amount)
+  end
+end

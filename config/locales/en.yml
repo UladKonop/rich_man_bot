@@ -45,6 +45,13 @@ en:
         instruction: Instruction
         settings: Settings
         buy_subscription: Subscription
+    buttons:
+      back: "Back"
+      add_expense: "Add Expense"
+      expenses: "My Expenses"
+      instruction: "Instruction"
+      settings: "Settings"
+      buy_subscription: "Subscription"
     buy:
       prompt: "Current subscription is valid until %{date}"
       need_subscription: "You need to purchase a subscription first"
@@ -89,6 +96,7 @@ en:
       gifts: "🎁 Gifts"
       other: "📦 Other"
     expenses:
+      added: "✅ Expense added"
       report:
         all_categories: "All categories"
         no_expenses: "No expenses"
@@ -98,3 +106,16 @@ en:
           date: "📅 %{date}"
           description: "📝 %{text}"
           separator: "---"
+        period: "Period: from %{start_date} to %{end_date}"
+    categories:
+      list: "📋 Your categories:"
+      add: "➕ Add category"
+      add_name: "Enter the name of the new category:"
+      add_emoji: "Enter an emoji for the category:"
+      edit_name: "Current name: %{current_name}\nEnter new name:"
+      edit_emoji: "Current emoji: %{current_emoji}\nEnter new emoji:"
+      added: "✅ Category added"
+      updated: "✅ Category updated"
+      deleted: "✅ Category deleted"
+      invalid_emoji: "❌ Please enter a single emoji"
+      cannot_delete_has_expenses: "❌ Cannot delete category with expenses"

@@ -4,10 +4,13 @@ class User < ApplicationRecord
   has_one :setting, dependent: :destroy
   has_one :subscription, dependent: :destroy
   has_many :expenses, dependent: :destroy
+  has_many :user_categories, dependent: :destroy
 
   before_create :initialize_setting, :initialize_subscription
 
   validates :chat_id, presence: true, uniqueness: true
+  # validates :telegram_id, presence: true, uniqueness: true
+  # validates :username, presence: true, uniqueness: true
 
   def expenses_by_category(category_id = nil)
     expenses = self.expenses.by_date

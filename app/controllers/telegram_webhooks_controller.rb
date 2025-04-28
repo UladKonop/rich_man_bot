@@ -37,10 +37,19 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def message(message)
-    if session[:context] == :add_expense
-      handle_add_expense(message.text)
-    elsif session[:context] == :change_currency!
-      @user.setting.update(currency: message.text)
+    case session[:context]
+    when :add_category_name
+      add_category_name(message)
+    when :add_category_emoji
+      add_category_emoji(message)
+    when :edit_category_name
+      edit_category_name(message)
+    when :edit_category_emoji
+      edit_category_emoji(message)
+    when :add_expense
+      handle_add_expense(message)
+    when :change_currency!
+      @user.setting.update(currency: message)
       show_settings_menu
     else
       show_main_menu
@@ -48,25 +57,31 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def callback_query(action)
-    if action.start_with?('category_')
-      category_id = action.split('_').last
-      category_id = category_id == 'all' ? nil : category_id.to_i
-      show_expenses_for_category(category_id)
-    elsif action.start_with?('select_category_')
-      category_id = action.split('_').last.to_i
+    case action
+    when 'add_category'
+      add_category
+    when /^edit_category_(\d+)$/
+      edit_category($1.to_i)
+    when /^delete_category_(\d+)$/
+      delete_category($1.to_i)
+    when /^select_category_(\d+)$/
+      category_id = $1.to_i
       save_context :add_expense
       session[:selected_category_id] = category_id
       respond_with_markdown_message(
         text: translation('add_expense.enter_amount'),
         reply_markup: back_button_inline('show_add_expense')
       )
-    elsif action == 'change_currency'
+    when /^report_category_(\d+)$/
+      category_id = $1.to_i
+      show_expenses(category_id)
+    when 'change_currency'
       save_context :change_currency!
       respond_with_markdown_message(
         text: translation('settings.currency.prompt'),
         reply_markup: back_button_inline('show_settings_menu')
       )
-    elsif action == 'show_language_info'
+    when 'show_language_info'
       respond_with_markdown_message(
         text: translation('settings.language.select'),
         reply_markup: {
@@ -80,8 +95,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
           ]
         }
       )
-    elsif action.start_with?('set_language_')
-      language = action.split('_').last
+    when /^set_language_(\w+)$/
+      language = $1
       @user.setting.update(language: language)
       I18n.locale = language.to_sym
       show_settings_menu(translation('settings.language.changed', language: language))
@@ -101,17 +116,24 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def show_add_expense
-    save_context :select_category
-    categories_buttons = Category.ordered.map do |category|
-      [{ text: category.display_name, callback_data: "select_category_#{category.id}" }]
+    show_categories
+  end
+
+  def show_categories
+    categories_buttons = @user.user_categories.map do |category|
+      [
+        { text: category.display_name, callback_data: "select_category_#{category.id}" },
+        { text: "✏️", callback_data: "edit_category_#{category.id}" },
+        { text: "🗑️", callback_data: "delete_category_#{category.id}" }
+      ]
     end
 
     respond_with_markdown_message(
-      text: translation('add_expense.select_category'),
+      text: translation('categories.list'),
       reply_markup: {
-        inline_keyboard: [
-          *categories_buttons,
-          back_button('keyboard!')
+        inline_keyboard: categories_buttons + [
+          [{ text: translation('categories.add'), callback_data: 'add_category' }],
+          [{ text: translation('buttons.back'), callback_data: 'main_menu' }]
         ]
       }
     )
@@ -124,11 +146,22 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     respond_with_markdown_message(text: translation(text, date: user_subscription_payed_for.strftime("%d.%m.%Y")), reply_markup: buy_subscription_keyboard_markup)
   end
 
-
   def show_expenses_for_category(category_id)
     expense_service = ExpenseService.new(@user)
     expenses_data = expense_service.get_expenses(category_id)
     message = expense_service.format_expenses_report(expenses_data)
+
+    respond_with_markdown_message(
+      text: message,
+      reply_markup: back_button_inline('show_expenses_menu')
+    )
+  end
+
+  def show_expenses(category_id = nil)
+    expense_service = ExpenseService.new(@user)
+    expenses_data = expense_service.get_expenses_report(category_id)
+    message = expenses_data[0]
+    total = expenses_data[1]
 
     respond_with_markdown_message(
       text: message,
@@ -165,26 +198,112 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def handle_add_expense(text)
     parts = text.split(' ', 2)
     amount = parts[0].gsub(',', '.').to_f
-    description = parts[1]
+    description = parts[1].to_s.strip
     category_id = session[:selected_category_id]
-    
-    if amount > 0 && category_id
-      expense_service = ExpenseService.new(@user)
-      result = expense_service.add_expense(category_id, amount, description)
-      
-      if result[:success]
-        show_main_menu(translation('expense_added'))
-      else
-        show_main_menu(translation('expense_error', errors: result[:errors].join(', ')))
-      end
-    else
+  
+    unless category_id.present?
+      Rails.logger.error "No selected_category_id in session! Session: #{session.inspect}"
       show_main_menu(translation('invalid_amount'))
+      return
+    end
+  
+    unless amount.positive?
+      show_main_menu(translation('invalid_amount'))
+      return
+    end
+  
+    expense_service = ExpenseService.new(@user)
+    result = expense_service.add_expense(category_id, amount, description)
+    
+    # binding.irb
+    if result[:success]
+      session.delete(:selected_category_id)
+      show_main_menu(translation('expense_added'))
+    else
+      errors = result[:errors]&.join(', ') || 'Unknown error'
+      show_main_menu(translation('expense_error', errors: errors))
     end
   end
 
   def change_currency!(*)
     @user.setting.update(currency: payload['text'])
     show_settings_menu
+  end
+
+  def add_category
+    save_context :add_category_name
+    respond_with_markdown_message(
+      text: translation('categories.add_name'),
+      reply_markup: back_button_inline('show_categories')
+    )
+  end
+
+  def add_category_name(message)
+    session[:category_name] = message
+    save_context :add_category_emoji
+    respond_with_markdown_message(
+      text: translation('categories.add_emoji'),
+      reply_markup: back_button_inline('show_categories')
+    )
+  end
+
+  def add_category_emoji(message)
+    emoji = message
+    name = session[:category_name]
+    if emoji.length == 1 && emoji.ord > 1000 && name.present?
+      @user.user_categories.create!(name: name, emoji: emoji)
+      session.delete(:category_name)
+      show_categories
+    else
+      respond_with_markdown_message(
+        text: translation('categories.invalid_emoji'),
+        reply_markup: back_button_inline('show_categories')
+      )
+    end
+  end
+
+  def edit_category(category_id)
+    @category = @user.user_categories.find(category_id)
+    save_context :edit_category_name
+    respond_with_markdown_message(
+      text: translation('categories.edit_name', current_name: @category.name),
+      reply_markup: back_button_inline('show_categories')
+    )
+  end
+
+  def edit_category_name(message)
+    @category.update!(name: message.text)
+    save_context :edit_category_emoji
+    respond_with_markdown_message(
+      text: translation('categories.edit_emoji', current_emoji: @category.emoji),
+      reply_markup: back_button_inline('show_categories')
+    )
+  end
+
+  def edit_category_emoji(message)
+    emoji = message.text
+    if emoji.length == 1 && emoji.ord > 1000
+      @category.update!(emoji: emoji)
+      show_categories(translation('categories.updated'))
+    else
+      respond_with_markdown_message(
+        text: translation('categories.invalid_emoji'),
+        reply_markup: back_button_inline('show_categories')
+      )
+    end
+  end
+
+  def delete_category(category_id)
+    category = @user.user_categories.find(category_id)
+    if category.expenses.any?
+      respond_with_markdown_message(
+        text: translation('categories.cannot_delete_has_expenses'),
+        reply_markup: back_button_inline('show_categories')
+      )
+    else
+      category.destroy!
+      show_categories(translation('categories.deleted'))
+    end
   end
 
   private
@@ -228,8 +347,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def expenses_menu_keyboard_markup
-    categories_buttons = Category.ordered.map do |category|
-      { text: category.display_name, callback_data: "category_#{category.id}" }
+    categories_buttons = @user.user_categories.order(:name).map do |category|
+      { text: category.display_name, callback_data: "report_category_#{category.id}" }
     end
 
     all_expenses_button = { text: "#{ICONS[:list]} #{translation('expenses_menu.all')}", callback_data: "category_all" }
