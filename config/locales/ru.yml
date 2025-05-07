@@ -102,7 +102,7 @@ ru:
         no_expenses: "Нет расходов"
         total: "Итого: %{amount} %{currency}"
         expense:
-          amount: "💰 %{amount} %{currency}"
+          amount: "%{emoji} %{amount} %{currency}"
           date: "📅 %{date}"
           description: "📝 %{text}"
           separator: "---"
