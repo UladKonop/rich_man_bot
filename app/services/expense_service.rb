@@ -52,7 +52,11 @@ class ExpenseService
     # Expenses section
     if expenses.any?
       expenses.order(date: :desc).each do |expense|
-        message << I18n.t('telegram_webhooks.expenses.report.expense.amount', amount: format_amount(expense.amount), currency: @user.setting.currency)
+        expense_emoji = category_id ? "💰" : (expense.user_category&.emoji || "💰")
+        message << I18n.t('telegram_webhooks.expenses.report.expense.amount',
+                         amount: format_amount(expense.amount),
+                         currency: @user.setting.currency,
+                         emoji: expense_emoji)
         message << I18n.t('telegram_webhooks.expenses.report.expense.date', date: expense.date.strftime('%d.%m.%Y'))
         message << I18n.t('telegram_webhooks.expenses.report.expense.description', text: expense.description) if expense.description.present?
         message << I18n.t('telegram_webhooks.expenses.report.expense.separator')
