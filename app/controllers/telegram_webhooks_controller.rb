@@ -133,7 +133,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       reply_markup: {
         inline_keyboard: categories_buttons + [
           [{ text: translation('categories.add'), callback_data: 'add_category' }],
-          [{ text: translation('buttons.back'), callback_data: 'main_menu' }]
+          back_button('keyboard!')
         ]
       }
     )
@@ -234,7 +234,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     save_context :add_category_name
     respond_with_markdown_message(
       text: translation('categories.add_name'),
-      reply_markup: back_button_inline('show_categories')
+      reply_markup: back_button_inline('keyboard!')
     )
   end
 
@@ -243,7 +243,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     save_context :add_category_emoji
     respond_with_markdown_message(
       text: translation('categories.add_emoji'),
-      reply_markup: back_button_inline('show_categories')
+      reply_markup: back_button_inline('keyboard!')
     )
   end
 
@@ -257,7 +257,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     else
       respond_with_markdown_message(
         text: translation('categories.invalid_emoji'),
-        reply_markup: back_button_inline('show_categories')
+        reply_markup: back_button_inline('keyboard!')
       )
     end
   end
@@ -267,7 +267,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     save_context :edit_category_name
     respond_with_markdown_message(
       text: translation('categories.edit_name', current_name: @category.name),
-      reply_markup: back_button_inline('show_categories')
+      reply_markup: back_button_inline('keyboard!')
     )
   end
 
@@ -276,7 +276,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     save_context :edit_category_emoji
     respond_with_markdown_message(
       text: translation('categories.edit_emoji', current_emoji: @category.emoji),
-      reply_markup: back_button_inline('show_categories')
+      reply_markup: back_button_inline('keyboard!')
     )
   end
 
@@ -288,7 +288,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     else
       respond_with_markdown_message(
         text: translation('categories.invalid_emoji'),
-        reply_markup: back_button_inline('show_categories')
+        reply_markup: back_button_inline('keyboard!')
       )
     end
   end
@@ -298,7 +298,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     if category.expenses.any?
       respond_with_markdown_message(
         text: translation('categories.cannot_delete_has_expenses'),
-        reply_markup: back_button_inline('show_categories')
+        reply_markup: back_button_inline('keyboard!')
       )
     else
       category.destroy!
