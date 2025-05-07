@@ -75,6 +75,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     when /^report_category_(\d+)$/
       category_id = $1.to_i
       show_expenses(category_id)
+    when 'category_all'
+      show_expenses
     when 'change_currency'
       save_context :change_currency!
       respond_with_markdown_message(
