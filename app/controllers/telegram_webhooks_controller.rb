@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
 
@@ -61,11 +63,11 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     when 'add_category'
       add_category
     when /^edit_category_(\d+)$/
-      edit_category($1.to_i)
+      edit_category(::Regexp.last_match(1).to_i)
     when /^delete_category_(\d+)$/
-      delete_category($1.to_i)
+      delete_category(::Regexp.last_match(1).to_i)
     when /^select_category_(\d+)$/
-      category_id = $1.to_i
+      category_id = ::Regexp.last_match(1).to_i
       save_context :add_expense
       session[:selected_category_id] = category_id
       respond_with_markdown_message(
@@ -73,7 +75,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         reply_markup: back_button_inline('show_add_expense')
       )
     when /^report_category_(\d+)$/
-      category_id = $1.to_i
+      category_id = ::Regexp.last_match(1).to_i
       show_expenses(category_id)
     when 'category_all'
       show_expenses
@@ -99,7 +101,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         }
       )
     when /^set_language_(\w+)$/
-      language = $1
+      language = ::Regexp.last_match(1)
       @user.setting.update(language:)
       I18n.locale = language.to_sym
       show_settings_menu(translation('settings.language.changed', language:))
@@ -126,8 +128,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     categories_buttons = @user.user_categories.map do |category|
       [
         { text: category.display_name, callback_data: "select_category_#{category.id}" },
-        { text: "✏️", callback_data: "edit_category_#{category.id}" },
-        { text: "🗑️", callback_data: "delete_category_#{category.id}" }
+        { text: '✏️', callback_data: "edit_category_#{category.id}" },
+        { text: '🗑️', callback_data: "delete_category_#{category.id}" }
       ]
     end
 
@@ -146,7 +148,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     save_context :keyboard!
     user_subscription_payed_for = @user.subscription.payed_for
     text = user_subscription_payed_for < DateTime.now ? 'buy.prompt_outdated' : 'buy.prompt'
-    respond_with_markdown_message(text: translation(text, date: user_subscription_payed_for.strftime("%d.%m.%Y")), reply_markup: buy_subscription_keyboard_markup)
+    respond_with_markdown_message(text: translation(text, date: user_subscription_payed_for.strftime('%d.%m.%Y')),
+                                  reply_markup: buy_subscription_keyboard_markup)
   end
 
   def show_expenses_for_category(category_id)
@@ -164,7 +167,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     expense_service = ExpenseService.new(@user)
     expenses_data = expense_service.get_expenses_report(category_id)
     message = expenses_data[0]
-    total = expenses_data[1]
+    expenses_data[1]
 
     respond_with_markdown_message(
       text: message,
@@ -174,14 +177,14 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def show_main_menu(text = translation('main_menu.prompt'))
     save_context :keyboard!
-    respond_with_markdown_message(text: text, reply_markup: main_keyboard_markup)
+    respond_with_markdown_message(text:, reply_markup: main_keyboard_markup)
   end
 
   def show_settings_menu(message = nil)
     save_context :keyboard!
     text = message || translation('settings.prompt')
     respond_with_markdown_message(
-      text: text,
+      text:,
       reply_markup: update_settings_keyboard_markup
     )
   end
@@ -203,28 +206,27 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     amount = parts[0].gsub(',', '.').to_f
     description = parts[1].to_s.strip
     category_id = session[:selected_category_id]
-  
+
     unless category_id.present?
       Rails.logger.error "No selected_category_id in session! Session: #{session.inspect}"
       show_main_menu(translation('invalid_amount'))
       return
     end
-  
+
     unless amount.positive?
       show_main_menu(translation('invalid_amount'))
       return
     end
-  
+
     expense_service = ExpenseService.new(@user)
     result = expense_service.add_expense(category_id, amount, description)
-    
-    # binding.irb
+
     if result[:success]
       session.delete(:selected_category_id)
       show_main_menu(translation('expense_added'))
     else
       errors = result[:errors]&.join(', ') || 'Unknown error'
-      show_main_menu(translation('expense_error', errors: errors))
+      show_main_menu(translation('expense_error', errors:))
     end
   end
 
@@ -254,7 +256,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     emoji = message
     name = session[:category_name]
     if emoji.length == 1 && emoji.ord > 1000 && name.present?
-      @user.user_categories.create!(name: name, emoji: emoji)
+      @user.user_categories.create!(name:, emoji:)
       session.delete(:category_name)
       show_categories
     else
@@ -286,7 +288,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def edit_category_emoji(message)
     emoji = message.text
     if emoji.length == 1 && emoji.ord > 1000
-      @category.update!(emoji: emoji)
+      @category.update!(emoji:)
       show_categories(translation('categories.updated'))
     else
       respond_with_markdown_message(
@@ -321,7 +323,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     Rails.logger.debug "Original params: #{params.inspect}"
     Rails.logger.debug "Original text: #{params[:text]}"
     Rails.logger.debug "Text bytes: #{params[:text].bytes.inspect}"
-    
+
     response = respond_with :message, params.merge(parse_mode: 'Markdown')
     Rails.logger.debug "Response: #{response.inspect}"
     response
@@ -334,11 +336,11 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     settings_button = "#{main_menu_buttons[:settings]} #{ICONS[:settings]}"
 
     buttons = []
-    if @user.setting.active?
-      buttons << [add_expense_button, expenses_button]
-    else
-      buttons << [expenses_button]
-    end
+    buttons << if @user.setting.active?
+                 [add_expense_button, expenses_button]
+               else
+                 [expenses_button]
+               end
     buttons << [settings_button, instruction_button]
 
     {
@@ -350,15 +352,22 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def expenses_menu_keyboard_markup
-    categories_buttons = @user.user_categories.order(:name).map do |category|
-      { text: category.display_name, callback_data: "report_category_#{category.id}" }
+    expense_service = ExpenseService.new(@user)
+    categories_with_totals = @user.user_categories.map do |category|
+      _, total = expense_service.get_expenses_report(category.id)
+      [category, total]
+    end.sort_by { |_, total| -total }.map do |category, total|
+      {
+        text: "#{category.display_name} - #{format('%.2f', total)} #{@user.setting.currency}",
+        callback_data: "report_category_#{category.id}"
+      }
     end
 
-    all_expenses_button = { text: "#{ICONS[:list]} #{translation('expenses_menu.all')}", callback_data: "category_all" }
+    all_expenses_button = { text: "#{ICONS[:list]} #{translation('expenses_menu.all')}", callback_data: 'category_all' }
 
     {
       inline_keyboard: [
-        *categories_buttons.each_slice(2).to_a,
+        *categories_with_totals.map { |cat| [{ text: cat[:text], callback_data: cat[:callback_data] }] },
         [all_expenses_button],
         back_button('keyboard!')
       ]
@@ -370,7 +379,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def back_button(callback_data = 'keyboard!')
-    [{ text: "#{translation('back_button')}  #{ICONS[:back_arrow]}", callback_data: callback_data }]
+    [{ text: "#{translation('back_button')}  #{ICONS[:back_arrow]}", callback_data: }]
   end
 
   def main_menu_buttons
@@ -387,7 +396,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     Rails.logger.debug "Available locales: #{I18n.available_locales.inspect}"
     Rails.logger.debug "Looking for translation at: telegram_webhooks.#{path}"
     Rails.logger.debug "Translation exists? #{I18n.exists?("telegram_webhooks.#{path}")}"
-    
+
     if params.empty?
       t("telegram_webhooks.#{path}")
     else
@@ -407,10 +416,12 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     {
       inline_keyboard: [
         [
-          { text: translation('settings.currency.current', currency: @user.setting.currency), callback_data: 'change_currency' }
+          { text: translation('settings.currency.current', currency: @user.setting.currency),
+            callback_data: 'change_currency' }
         ],
         [
-          { text: translation('settings.language.current', language: @user.setting.language || 'ru'), callback_data: 'show_language_info' }
+          { text: translation('settings.language.current', language: @user.setting.language || 'en'),
+            callback_data: 'show_language_info' }
         ],
         back_button('keyboard!')
       ]
