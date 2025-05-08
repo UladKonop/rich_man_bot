@@ -83,6 +83,7 @@ en:
         russian: "Russian"
         english: "English"
         belarusian: "Belarusian"
+        polish: "Polish"
         changed: "Language changed to %{language}"
     expenses:
       added: "✅ Expense added"

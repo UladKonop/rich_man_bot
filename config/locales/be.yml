@@ -52,6 +52,7 @@ be:
         russian: "Руская"
         english: "Англійская"
         belarusian: "Беларуская"
+        polish: "Польская"
         changed: "Мова зменена на %{language}"
     expenses:
       added: "✅ Выдатак дададзены"
