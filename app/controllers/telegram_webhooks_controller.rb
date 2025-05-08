@@ -72,7 +72,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       session[:selected_category_id] = category_id
       respond_with_markdown_message(
         text: translation('add_expense.enter_amount'),
-        reply_markup: back_button_inline('show_add_expense')
+        reply_markup: { inline_keyboard: expense_amount_keyboard_markup(category_id) }
       )
     when /^report_category_(\d+)$/
       category_id = ::Regexp.last_match(1).to_i
@@ -105,6 +105,14 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       @user.setting.update(language:)
       I18n.locale = language.to_sym
       show_settings_menu(translation('settings.language.changed', language:))
+    when /^show_expense_amount_for_category_(\d+)$/
+      category_id = ::Regexp.last_match(1).to_i
+      save_context :add_expense
+      session[:selected_category_id] = category_id
+      respond_with_markdown_message(
+        text: translation('add_expense.enter_amount'),
+        reply_markup: { inline_keyboard: expense_amount_keyboard_markup(category_id) }
+      )
     else
       invoke_action(action)
     end
@@ -126,11 +134,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def show_categories
     categories_buttons = @user.user_categories.map do |category|
-      [
-        { text: category.display_name, callback_data: "select_category_#{category.id}" },
-        { text: '✏️', callback_data: "edit_category_#{category.id}" },
-        { text: '🗑️', callback_data: "delete_category_#{category.id}" }
-      ]
+      [{ text: category.display_name, callback_data: "select_category_#{category.id}" }]
     end
 
     respond_with_markdown_message(
@@ -272,7 +276,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     save_context :edit_category_name
     respond_with_markdown_message(
       text: translation('categories.edit_name', current_name: @category.name),
-      reply_markup: back_button_inline('keyboard!')
+      reply_markup: back_button_inline("show_expense_amount_for_category_#{category_id}")
     )
   end
 
@@ -281,7 +285,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     save_context :edit_category_emoji
     respond_with_markdown_message(
       text: translation('categories.edit_emoji', current_emoji: @category.emoji),
-      reply_markup: back_button_inline('keyboard!')
+      reply_markup: back_button_inline("show_expense_amount_for_category_#{@category.id}")
     )
   end
 
@@ -293,7 +297,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     else
       respond_with_markdown_message(
         text: translation('categories.invalid_emoji'),
-        reply_markup: back_button_inline('keyboard!')
+        reply_markup: back_button_inline("show_expense_amount_for_category_#{@category.id}")
       )
     end
   end
@@ -303,12 +307,23 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     if category.expenses.any?
       respond_with_markdown_message(
         text: translation('categories.cannot_delete_has_expenses'),
-        reply_markup: back_button_inline('keyboard!')
+        reply_markup: back_button_inline("show_expense_amount_for_category_#{category_id}")
       )
     else
       category.destroy!
       show_categories(translation('categories.deleted'))
     end
+  end
+
+  # Клавиатура для шага ввода суммы с кнопками редактирования и удаления выбранной категории
+  def expense_amount_keyboard_markup(category_id)
+    [
+      [
+        { text: '✏️', callback_data: "edit_category_#{category_id}" },
+        { text: '🗑️', callback_data: "delete_category_#{category_id}" }
+      ],
+      back_button('show_add_expense')
+    ]
   end
 
   private
