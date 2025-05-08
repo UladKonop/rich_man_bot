@@ -38,7 +38,7 @@ en:
     start:
       hi: 'Hello %{name}!'
     main_menu:
-      prompt: "Choose an action:"
+      prompt: "Choose an action: 👇"
       buttons:
         expenses: My Expenses
         add_expense: Add Expense
@@ -80,21 +80,10 @@ en:
       language:
         current: "🌐 Language: %{language}"
         select: "Choose language:"
-        russian: "🇷🇺 Russian"
-        english: "🇬🇧 English"
-        belarusian: "🤍❤️🤍 Belarusian"
+        russian: "Russian"
+        english: "English"
+        belarusian: "Belarusian"
         changed: "Language changed to %{language}"
-    categories:
-      food: "🍔 Food"
-      transport: "🚗 Transport"
-      entertainment: "🎮 Entertainment"
-      shopping: "🛍️ Shopping"
-      health: "💊 Health"
-      housing: "🏠 Housing"
-      clothing: "👕 Clothing"
-      education: "📚 Education"
-      gifts: "🎁 Gifts"
-      other: "📦 Other"
     expenses:
       added: "✅ Expense added"
       report:

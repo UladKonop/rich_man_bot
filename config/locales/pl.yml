@@ -1,0 +1,80 @@
+pl:
+  date:
+    formats:
+      default: "%d.%m.%Y"
+    month_names: [~, Styczeń, Luty, Marzec, Kwiecień, Maj, Czerwiec, Lipiec, Sierpień, Wrzesień, Październik, Listopad, Grudzień]
+  telegram_webhooks:
+    start:
+      hi: 'Cześć %{name}!'
+    main_menu:
+      prompt: "Wybierz akcję: 👇"
+      buttons:
+        expenses: Moje wydatki
+        add_expense: Dodaj wydatek
+        instruction: Instrukcja
+        settings: Ustawienia
+        buy_subscription: Subskrypcja
+    buttons:
+      back: "Wróć"
+      add_expense: "Dodaj wydatek"
+      expenses: "Moje wydatki"
+      instruction: "Instrukcja"
+      settings: "Ustawienia"
+      buy_subscription: "Subskrypcja"
+    buy:
+      prompt: Bieżąca subskrypcja ważna do %{date}
+      need_subscription: Najpierw musisz wykupić subskrypcję
+      buy_button: Przedłuż
+      prompt_outdated: Subskrypcja wygasła %{date}
+    back_button: Wróć
+    expenses_menu:
+      prompt: "Wybierz kategorię wydatków:"
+      all: "Wszystkie wydatki"
+    add_expense:
+      select_category: "Wybierz kategorię wydatku:"
+      enter_amount: "Wprowadź kwotę wydatku (możesz dodać opis po spacji):"
+      invalid_amount: "Nieprawidłowa kwota. Wprowadź liczbę dodatnią."
+    expense_added: "Wydatek został dodany!"
+    expense_error: "Błąd podczas dodawania wydatku: %{errors}"
+    invalid_expense_format: "Nieprawidłowy format wydatku. Użyj formatu: kwota kategoria opis"
+    instruction:
+      main: |
+        Cześć! Jestem Richman bot
+        Pomogę Ci zarządzać swoimi wydatkami.
+    settings:
+      prompt: "Ustawienia bota:"
+      currency:
+        prompt: "Wprowadź symbol lub tekst waluty (np.: PLN, ₽, $, €):"
+        current: "💰 Waluta: %{currency}"
+      language:
+        current: "🌐 Język: %{language}"
+        select: "Wybierz język:"
+        russian: "Rosyjski"
+        english: "Angielski"
+        belarusian: "Białoruski"
+        polish: "Polski"
+        changed: "Język zmieniony na %{language}"
+    expenses:
+      added: "✅ Wydatek dodany"
+      report:
+        all_categories: "Wszystkie kategorie"
+        no_expenses: "Brak wydatków"
+        total: "Suma: %{amount} %{currency}"
+        expense:
+          amount: "%{emoji} %{amount} %{currency}"
+          date: "📅 %{date}"
+          description: "📝 %{text}"
+          separator: "---"
+        period: "Okres: od %{start_date} do %{end_date}"
+    categories:
+      list: "📋 Twoje kategorie:"
+      add: "➕ Dodaj kategorię"
+      add_name: "Wprowadź nazwę nowej kategorii:"
+      add_emoji: "Wprowadź emoji dla kategorii:"
+      edit_name: "Bieżąca nazwa: %{current_name}\nWprowadź nową nazwę:"
+      edit_emoji: "Bieżąca ikona: %{current_emoji}\nWprowadź nową ikonę:"
+      added: "✅ Kategoria dodana"
+      updated: "✅ Kategoria zaktualizowana"
+      deleted: "✅ Kategoria usunięta"
+      invalid_emoji: "❌ Proszę wprowadzić jedno emoji"
+      cannot_delete_has_expenses: "❌ Nie można usunąć kategorii, która zawiera wydatki" 

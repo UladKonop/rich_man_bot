@@ -91,7 +91,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
             [
               { text: translation('settings.language.russian'), callback_data: 'set_language_ru' },
               { text: translation('settings.language.english'), callback_data: 'set_language_en' },
-              { text: translation('settings.language.belarusian'), callback_data: 'set_language_be' }
+              { text: translation('settings.language.belarusian'), callback_data: 'set_language_be' },
+              { text: translation('settings.language.polish'), callback_data: 'set_language_pl' }
             ],
             back_button('show_settings_menu')
           ]
@@ -99,9 +100,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       )
     when /^set_language_(\w+)$/
       language = $1
-      @user.setting.update(language: language)
+      @user.setting.update(language:)
       I18n.locale = language.to_sym
-      show_settings_menu(translation('settings.language.changed', language: language))
+      show_settings_menu(translation('settings.language.changed', language:))
     else
       invoke_action(action)
     end
