@@ -132,13 +132,14 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     show_categories
   end
 
-  def show_categories
+  def show_categories(message = nil)
     categories_buttons = @user.user_categories.map do |category|
       [{ text: category.display_name, callback_data: "select_category_#{category.id}" }]
     end
 
+    text = message || translation('categories.list')
     respond_with_markdown_message(
-      text: translation('categories.list'),
+      text: text,
       reply_markup: {
         inline_keyboard: categories_buttons + [
           [{ text: translation('categories.add'), callback_data: 'add_category' }],
@@ -273,6 +274,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def edit_category(category_id)
     @category = @user.user_categories.find(category_id)
+    session[:editing_category_id] = category_id
     save_context :edit_category_name
     respond_with_markdown_message(
       text: translation('categories.edit_name', current_name: @category.name),
@@ -281,23 +283,26 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def edit_category_name(message)
-    @category.update!(name: message.text)
+    @category = @user.user_categories.find(session[:editing_category_id])
+    @category.update!(name: message)
     save_context :edit_category_emoji
     respond_with_markdown_message(
       text: translation('categories.edit_emoji', current_emoji: @category.emoji),
-      reply_markup: back_button_inline("show_expense_amount_for_category_#{@category.id}")
+      reply_markup: back_button_inline("edit_category_#{@category.id}")
     )
   end
 
   def edit_category_emoji(message)
-    emoji = message.text
+    @category = @user.user_categories.find(session[:editing_category_id])
+    emoji = message
     if emoji.length == 1 && emoji.ord > 1000
       @category.update!(emoji:)
+      session.delete(:editing_category_id)
       show_categories(translation('categories.updated'))
     else
       respond_with_markdown_message(
         text: translation('categories.invalid_emoji'),
-        reply_markup: back_button_inline("show_expense_amount_for_category_#{@category.id}")
+        reply_markup: back_button_inline("edit_category_#{@category.id}")
       )
     end
   end
