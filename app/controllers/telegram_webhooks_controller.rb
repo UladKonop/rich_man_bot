@@ -90,12 +90,10 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         text: translation('settings.language.select'),
         reply_markup: {
           inline_keyboard: [
-            [
-              { text: translation('settings.language.russian'), callback_data: 'set_language_ru' },
-              { text: translation('settings.language.english'), callback_data: 'set_language_en' },
-              { text: translation('settings.language.belarusian'), callback_data: 'set_language_be' },
-              { text: translation('settings.language.polish'), callback_data: 'set_language_pl' }
-            ],
+            [{ text: translation('settings.language.russian'), callback_data: 'set_language_ru' }],
+            [{ text: translation('settings.language.english'), callback_data: 'set_language_en' }],
+            [{ text: translation('settings.language.belarusian'), callback_data: 'set_language_be' }],
+            [{ text: translation('settings.language.polish'), callback_data: 'set_language_pl' }],
             back_button('show_settings_menu')
           ]
         }
@@ -139,7 +137,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
     text = message || translation('categories.list')
     respond_with_markdown_message(
-      text: text,
+      text:,
       reply_markup: {
         inline_keyboard: categories_buttons + [
           [{ text: translation('categories.add'), callback_data: 'add_category' }],
@@ -334,19 +332,31 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   private
 
   def find_user
-    @user = User.find_or_create_by(chat_id: chat['id'])
+    @user = User.find_or_create_by(chat_id: chat['id']) do |user|
+      user.name = chat['username']
+    end
+
+    # Get language from Telegram
+    telegram_language = payload['from']['language_code']&.to_sym
+    supported_language = if telegram_language && I18n.available_locales.include?(telegram_language)
+                           telegram_language
+                         else
+                           :en
+                         end
+
+    # Create or update setting
+    if @user.setting.present?
+      @user.setting.update!(language: supported_language.to_s) if @user.setting.language.nil?
+    else
+      @user.create_setting!(language: supported_language.to_s)
+    end
+
     @user.update(name: chat['username']) unless @user.name.present?
-    I18n.locale = @user.setting.language&.to_sym || :ru
+    I18n.locale = @user.setting.language&.to_sym || :en
   end
 
   def respond_with_markdown_message(params = {})
-    Rails.logger.debug "Original params: #{params.inspect}"
-    Rails.logger.debug "Original text: #{params[:text]}"
-    Rails.logger.debug "Text bytes: #{params[:text].bytes.inspect}"
-
-    response = respond_with :message, params.merge(parse_mode: 'Markdown')
-    Rails.logger.debug "Response: #{response.inspect}"
-    response
+    respond_with :message, params.merge(parse_mode: 'Markdown')
   end
 
   def main_keyboard_markup
@@ -417,11 +427,6 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def translation(path, params = {})
-    Rails.logger.debug "Current locale: #{I18n.locale}"
-    Rails.logger.debug "Available locales: #{I18n.available_locales.inspect}"
-    Rails.logger.debug "Looking for translation at: telegram_webhooks.#{path}"
-    Rails.logger.debug "Translation exists? #{I18n.exists?("telegram_webhooks.#{path}")}"
-
     if params.empty?
       t("telegram_webhooks.#{path}")
     else
