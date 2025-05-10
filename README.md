@@ -50,4 +50,3 @@ Telegram.bot.get_webhook_info
 - потыкать редактирование и удаление категории
 - автоматическое определение языка пользователя
 - отображения языков в столбик а не строчку
-- Translation missing: ru.telegramwebhooks.invalidamount

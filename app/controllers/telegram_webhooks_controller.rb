@@ -213,12 +213,12 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
     unless category_id.present?
       Rails.logger.error "No selected_category_id in session! Session: #{session.inspect}"
-      show_main_menu(translation('invalid_amount'))
+      show_main_menu(translation('add_expense.invalid_amount'))
       return
     end
 
     unless amount.positive?
-      show_main_menu(translation('invalid_amount'))
+      show_main_menu(translation('add_expense.invalid_amount'))
       return
     end
 
