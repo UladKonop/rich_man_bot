@@ -258,7 +258,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def add_category_emoji(message)
     emoji = message
     name = session[:category_name]
-    if emoji.length == 1 && emoji.ord > 1000 && name.present?
+    if emoji.match?(/\p{Emoji}/) && name.present?
       @user.user_categories.create!(name:, emoji:)
       session.delete(:category_name)
       show_categories
@@ -293,7 +293,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def edit_category_emoji(message)
     @category = @user.user_categories.find(session[:editing_category_id])
     emoji = message
-    if emoji.length == 1 && emoji.ord > 1000
+    if emoji.match?(/\p{Emoji}/)
       @category.update!(emoji:)
       session.delete(:editing_category_id)
       show_categories(translation('categories.updated'))
