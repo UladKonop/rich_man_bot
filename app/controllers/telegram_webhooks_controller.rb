@@ -378,7 +378,12 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       }
     end
 
-    all_expenses_button = { text: "#{ICONS[:list]} #{translation('expenses_menu.all')}", callback_data: 'category_all' }
+    _, all_total = expense_service.get_expenses_report
+    all_expenses_button = {
+      text: "#{ICONS[:list]} #{translation('expenses_menu.all')} - #{format('%.2f',
+                                                                            all_total)} #{@user.setting.currency}",
+      callback_data: 'category_all'
+    }
 
     {
       inline_keyboard: [
