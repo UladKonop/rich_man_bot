@@ -50,6 +50,10 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       edit_category_emoji(message)
     when :add_expense
       handle_add_expense(message)
+    when :edit_expense_amount
+      edit_expense_amount(message)
+    when :edit_expense_description
+      edit_expense_description(message)
     when :change_currency!
       @user.setting.update(currency: message)
       show_settings_menu
@@ -77,6 +81,31 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     when /^report_category_(\d+)$/
       category_id = ::Regexp.last_match(1).to_i
       show_expenses(category_id)
+    when /^show_expense_(\d+)$/
+      expense_id = ::Regexp.last_match(1).to_i
+      show_expense(expense_id)
+    when /^edit_expense_(\d+)$/
+      expense_id = ::Regexp.last_match(1).to_i
+      edit_expense(expense_id)
+    when /^delete_expense_(\d+)$/
+      expense_id = ::Regexp.last_match(1).to_i
+      delete_expense(expense_id)
+    when /^edit_expense_amount_(\d+)$/
+      expense_id = ::Regexp.last_match(1).to_i
+      save_context :edit_expense_amount
+      session[:editing_expense_id] = expense_id
+      respond_with_markdown_message(
+        text: translation('expenses.edit_amount'),
+        reply_markup: back_button_inline('show_expenses')
+      )
+    when /^edit_expense_description_(\d+)$/
+      expense_id = ::Regexp.last_match(1).to_i
+      save_context :edit_expense_description
+      session[:editing_expense_id] = expense_id
+      respond_with_markdown_message(
+        text: translation('expenses.edit_description'),
+        reply_markup: back_button_inline('show_expenses')
+      )
     when 'category_all'
       show_expenses
     when 'change_currency'
@@ -111,6 +140,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         text: translation('add_expense.enter_amount'),
         reply_markup: { inline_keyboard: expense_amount_keyboard_markup(category_id) }
       )
+    when /^show_expenses_(\d+)$/
+      category_id = ::Regexp.last_match(1).to_i
+      show_expenses(category_id)
     else
       invoke_action(action)
     end
@@ -166,15 +198,42 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     )
   end
 
-  def show_expenses(category_id = nil)
+  def show_expenses(category_id = nil, message = nil, back_to_menu: false)
     expense_service = ExpenseService.new(@user)
     expenses_data = expense_service.get_expenses_report(category_id)
-    message = expenses_data[0]
+    text = message || expenses_data[0]
     expenses_data[1]
 
+    expenses = @user.expenses.where(user_category_id: category_id).order(date: :desc)
+    buttons = expenses.map do |expense|
+      [{ text: format('%.2f', expense.amount), callback_data: "show_expense_#{expense.id}" }]
+    end
+
     respond_with_markdown_message(
-      text: message,
-      reply_markup: back_button_inline('show_expenses_menu')
+      text:,
+      reply_markup: {
+        inline_keyboard: [
+          *buttons,
+          back_button('show_expenses_menu')
+        ]
+      }
+    )
+  end
+
+  def show_expense(expense_id)
+    expense = @user.expenses.find(expense_id)
+    text = "💰 #{format('%.2f', expense.amount)}\n📅 #{expense.date.strftime('%d.%m.%Y')}\n📝 #{expense.description}"
+    respond_with_markdown_message(
+      text:,
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: '✏️', callback_data: "edit_expense_#{expense.id}" },
+            { text: '🗑️', callback_data: "delete_expense_#{expense.id}" }
+          ],
+          back_button('show_expenses', expense.user_category_id)
+        ]
+      }
     )
   end
 
@@ -211,7 +270,6 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     category_id = session[:selected_category_id]
 
     unless category_id.present?
-      Rails.logger.error "No selected_category_id in session! Session: #{session.inspect}"
       show_main_menu(translation('add_expense.invalid_amount'))
       return
     end
@@ -329,6 +387,61 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     ]
   end
 
+  def edit_expense(expense_id)
+    expense = @user.expenses.find(expense_id)
+    respond_with_markdown_message(
+      text: translation('expenses.edit_prompt', amount: expense.amount, description: expense.description),
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: translation('expenses.edit_amount'), callback_data: "edit_expense_amount_#{expense_id}" },
+            { text: translation('expenses.edit_description'), callback_data: "edit_expense_description_#{expense_id}" }
+          ],
+          back_button('show_expenses')
+        ]
+      }
+    )
+  end
+
+  def delete_expense(expense_id)
+    expense = @user.expenses.find(expense_id)
+    category_id = expense.user_category_id
+    expense.destroy!
+    # Показываем полный отчёт, но с сообщением об удалении
+    expenses_data = ExpenseService.new(@user).get_expenses_report(category_id)
+    text = "#{translation('expenses.deleted')}\n\n#{expenses_data[0]}"
+    show_expenses(category_id, text, back_to_menu: true)
+  end
+
+  def edit_expense_amount(message, *_args)
+    expense_id = session[:editing_expense_id]
+    amount = message.gsub(',', '.').to_f
+
+    if amount.positive?
+      expense = @user.expenses.find(expense_id)
+      expense.update!(amount:)
+      session.delete(:editing_expense_id)
+      expenses_data = ExpenseService.new(@user).get_expenses_report(expense.user_category_id)
+      text = "#{translation('expenses.updated')}\n\n#{expenses_data[0]}"
+      show_expenses(expense.user_category_id, text, back_to_menu: true)
+    else
+      respond_with_markdown_message(
+        text: translation('add_expense.invalid_amount'),
+        reply_markup: back_button_inline("edit_expense_#{expense_id}")
+      )
+    end
+  end
+
+  def edit_expense_description(message, *_args)
+    expense_id = session[:editing_expense_id]
+    expense = @user.expenses.find(expense_id)
+    expense.update!(description: message)
+    session.delete(:editing_expense_id)
+    expenses_data = ExpenseService.new(@user).get_expenses_report(expense.user_category_id)
+    text = "#{translation('expenses.updated')}\n\n#{expenses_data[0]}"
+    show_expenses(expense.user_category_id, text, back_to_menu: true)
+  end
+
   private
 
   def find_user
@@ -413,8 +526,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     { inline_keyboard: [back_button(callback_data)] }
   end
 
-  def back_button(callback_data = 'keyboard!')
-    [{ text: "#{translation('back_button')}  #{ICONS[:back_arrow]}", callback_data: }]
+  def back_button(callback_data = 'keyboard!', arg = nil)
+    data = arg ? "#{callback_data}_#{arg}" : callback_data
+    [{ text: "#{translation('back_button')}  #{ICONS[:back_arrow]}", callback_data: data }]
   end
 
   def main_menu_buttons
