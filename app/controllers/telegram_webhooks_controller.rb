@@ -82,7 +82,12 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       )
     when /^report_category_(\d+)$/
       category_id = ::Regexp.last_match(1).to_i
-      show_expenses(category_id)
+      show_periods_menu
+      session[:selected_category_id] = category_id
+    when /^select_period_(\d{4}-\d{2}-\d{2})$/
+      period_start = Date.parse(::Regexp.last_match(1))
+      category_id = session[:selected_category_id]
+      show_expenses(category_id, nil, period_start: period_start)
     when /^show_expense_(\d+)$/
       expense_id = ::Regexp.last_match(1).to_i
       show_expense(expense_id)
@@ -142,9 +147,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         text: translation('add_expense.enter_amount'),
         reply_markup: { inline_keyboard: expense_amount_keyboard_markup(category_id) }
       )
-    when /^show_expenses_(\d+)$/
-      category_id = ::Regexp.last_match(1).to_i
-      show_expenses(category_id)
+    when 'show_periods_menu'
+      show_periods_menu
     when 'change_period_start_day'
       handle_period_start_day
     when /^set_period_start_day_(\d+)$/
@@ -164,6 +168,60 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       text: translation('expenses_menu.prompt'),
       reply_markup: expenses_menu_keyboard_markup
     )
+  end
+
+  def show_periods_menu
+    save_context :keyboard!
+    periods = get_available_periods
+    period_buttons = periods.map do |period|
+      [{ text: period[:display], callback_data: "select_period_#{period[:start_date]}" }]
+    end
+
+    respond_with_markdown_message(
+      text: translation('expenses_menu.select_period'),
+      reply_markup: {
+        inline_keyboard: period_buttons + [back_button('show_expenses_menu')]
+      }
+    )
+  end
+
+  def get_available_periods
+    start_day = @user.setting.period_start_day
+    today = Date.today
+    periods = []
+
+    # Get all expenses dates
+    expense_dates = @user.expenses.pluck(:date).uniq.sort.reverse
+
+    # Group expenses by periods
+    expense_dates.each do |date|
+      period_start = if date.day >= start_day
+                      Date.new(date.year, date.month, start_day)
+                    else
+                      Date.new(date.year, date.month, start_day).prev_month
+                    end
+      
+      # Calculate end date as start_day - 1 of next month
+      period_end = if period_start.month == 12
+                    Date.new(period_start.year + 1, 1, start_day) - 1.day
+                  else
+                    Date.new(period_start.year, period_start.month + 1, start_day) - 1.day
+                  end
+      
+      # Skip if period is already added
+      next if periods.any? { |p| p[:start_date] == period_start.to_s }
+
+      # Add period if it has expenses
+      if @user.expenses.where(date: period_start..period_end).exists?
+        periods << {
+          start_date: period_start.to_s,
+          end_date: period_end.to_s,
+          display: "#{I18n.l(period_start, format: '%B %Y')}"
+        }
+      end
+    end
+
+    periods
   end
 
   def show_add_expense
@@ -206,15 +264,38 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     )
   end
 
-  def show_expenses(category_id = nil, message = nil, back_to_menu: false)
+  def show_expenses(category_id = nil, message = nil, back_to_menu: false, period_start: nil)
     expense_service = ExpenseService.new(@user)
-    expenses_data = expense_service.get_expenses_report(category_id)
+    expenses_data = expense_service.get_expenses_report(category_id, period_start)
     text = message || expenses_data[0]
-    expenses_data[1]
 
-    expenses = @user.expenses.where(user_category_id: category_id).order(date: :desc)
-    buttons = expenses.map do |expense|
-      [{ text: format('%.2f', expense.amount), callback_data: "show_expense_#{expense.id}" }]
+    if period_start
+      # For previous periods, show category totals
+      categories_with_totals = @user.user_categories.map do |category|
+        _, total = expense_service.get_expenses_report(category.id, period_start)
+        [category, total]
+      end.sort_by { |_, total| -total }
+
+      # Add category totals to the message
+      text += "\n\n"
+      categories_with_totals.each do |category, total|
+        text += "#{category.display_name}: #{format('%.2f', total)} #{@user.setting.currency}\n"
+      end
+
+      # Add total for all categories
+      _, all_total = expense_service.get_expenses_report(nil, period_start)
+      text += "\n#{translation('expenses_menu.all')}: #{format('%.2f', all_total)} #{@user.setting.currency}"
+    else
+      # For current period, show expense buttons
+      start_date, end_date = expense_service.send(:current_period_range)
+      expenses = @user.expenses
+      expenses = expenses.where(user_category_id: category_id) if category_id
+      expenses = expenses.where(date: start_date..end_date)
+      expenses = expenses.order(date: :desc)
+
+      buttons = expenses.map do |expense|
+        [{ text: format('%.2f', expense.amount), callback_data: "show_expense_#{expense.id}" }]
+      end
     end
 
     respond_with_markdown_message(
@@ -561,6 +642,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       inline_keyboard: [
         *categories_with_totals.map { |cat| [{ text: cat[:text], callback_data: cat[:callback_data] }] },
         [all_expenses_button],
+        [{ text: translation('expenses_menu.previous_periods'), callback_data: 'show_periods_menu' }],
         back_button('keyboard!')
       ]
     }

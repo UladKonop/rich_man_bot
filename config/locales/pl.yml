@@ -5,7 +5,7 @@ pl:
     month_names: [~, Styczeń, Luty, Marzec, Kwiecień, Maj, Czerwiec, Lipiec, Sierpień, Wrzesień, Październik, Listopad, Grudzień]
   telegram_webhooks:
     start:
-      hi: 'Cześć %{name}!'
+      hi: 'Cześć, %{name}!'
     main_menu:
       prompt: "Wybierz akcję: 👇"
       buttons:
@@ -15,26 +15,28 @@ pl:
         settings: Ustawienia
         buy_subscription: Subskrypcja
     buttons:
-      back: "Wróć"
+      back: "Wstecz"
       add_expense: "Dodaj wydatek"
       expenses: "Moje wydatki"
       instruction: "Instrukcja"
       settings: "Ustawienia"
       buy_subscription: "Subskrypcja"
     buy:
-      prompt: Bieżąca subskrypcja ważna do %{date}
-      need_subscription: Najpierw musisz wykupić subskrypcję
-      buy_button: Przedłuż
-      prompt_outdated: Subskrypcja wygasła %{date}
-    back_button: Wróć
+      prompt: "Obecna subskrypcja jest ważna do %{date}"
+      need_subscription: "Najpierw musisz wykupić subskrypcję"
+      buy_button: "Przedłuż"
+      prompt_outdated: "Subskrypcja wygasła %{date}"
+    back_button: "Wstecz"
     expenses_menu:
       prompt: "Wybierz kategorię wydatków:"
       all: "Wszystkie wydatki"
+      previous_periods: "Poprzednie okresy"
+      select_period: "Wybierz okres:"
     add_expense:
-      select_category: "Wybierz kategorię wydatku:"
-      enter_amount: "Wprowadź kwotę wydatku (możesz dodać opis po spacji):"
+      select_category: "Wybierz kategorię wydatków:"
+      enter_amount: "Wprowadź kwotę (możesz dodać opis ze spacją):"
       invalid_amount: "Nieprawidłowa kwota. Wprowadź liczbę dodatnią."
-    expense_added: "Wydatek został dodany!"
+    expense_added: "Wydatek został pomyślnie dodany!"
     expense_error: "Błąd podczas dodawania wydatku: %{errors}"
     invalid_expense_format: "Nieprawidłowy format wydatku. Użyj formatu: kwota kategoria opis"
     instruction:
@@ -63,22 +65,17 @@ pl:
       added: "✅ Wydatek dodany"
       report:
         all_categories: "Wszystkie kategorie"
-        no_expenses: "Brak wydatków"
+        period: "Okres: %{start_date} - %{end_date}"
         total: "Suma: %{amount} %{currency}"
-        expense:
-          amount: "%{emoji} %{amount} %{currency}"
-          date: "📅 %{date}"
-          description: "📝 %{text}"
-          separator: "---"
-        period: "Okres: od %{start_date} do %{end_date}"
+        no_expenses: "Brak wydatków w tym okresie"
       list: "Twoje wydatki:"
       no_expenses: "Brak wydatków"
       total: "Suma: %{amount} %{currency}"
-      edit_prompt: "Edytuj wydatek:\nKwota: %{amount}\nOpis: %{description}"
+      edit_prompt: "Kwota: %{amount}\nOpis: %{description}\nCo chcesz zmienić?"
       edit_amount: "Zmień kwotę"
       edit_description: "Zmień opis"
-      updated: "Wydatek został zaktualizowany"
-      deleted: "Wydatek został usunięty"
+      updated: "✅ Wydatek zaktualizowany"
+      deleted: "✅ Wydatek usunięty"
     categories:
       list: "📋 Twoje kategorie:"
       add: "➕ Dodaj kategorię"

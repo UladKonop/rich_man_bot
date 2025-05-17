@@ -36,7 +36,7 @@ en:
     month_names: [~, January, February, March, April, May, June, July, August, September, October, November, December]
   telegram_webhooks:
     start:
-      hi: 'Hello %{name}!'
+      hi: 'Hello, %{name}!'
     main_menu:
       prompt: "Choose an action: 👇"
       buttons:
@@ -61,6 +61,8 @@ en:
     expenses_menu:
       prompt: "Choose expense category:"
       all: "All expenses"
+      previous_periods: "Previous periods"
+      select_period: "Select period:"
     add_expense:
       select_category: "Choose expense category:"
       enter_amount: "Enter the amount (you can add a description with a space):"
@@ -93,23 +95,18 @@ en:
     expenses:
       added: "✅ Expense added"
       report:
-        all_categories: "All categories"
-        no_expenses: "No expenses"
+        all_categories: "All Categories"
+        period: "Period: %{start_date} - %{end_date}"
         total: "Total: %{amount} %{currency}"
-        expense:
-          amount: "💰 %{amount} %{currency}"
-          date: "📅 %{date}"
-          description: "📝 %{text}"
-          separator: "---"
-        period: "Period: from %{start_date} to %{end_date}"
+        no_expenses: "No expenses for this period"
       list: "Your expenses:"
       no_expenses: "No expenses yet"
       total: "Total: %{amount} %{currency}"
-      edit_prompt: "Edit expense:\nAmount: %{amount}\nDescription: %{description}"
+      edit_prompt: "Amount: %{amount}\nDescription: %{description}\nWhat do you want to edit?"
       edit_amount: "Edit amount"
       edit_description: "Edit description"
-      updated: "Expense updated successfully"
-      deleted: "Expense deleted successfully"
+      updated: "✅ Expense updated"
+      deleted: "✅ Expense deleted"
     categories:
       list: "📋 Your categories:"
       add: "➕ Add category"
