@@ -57,6 +57,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     when :change_currency!
       @user.setting.update(currency: message)
       show_settings_menu
+    when :period_start_day
+      period_start_day!(message)
     else
       show_main_menu
     end
@@ -143,6 +145,12 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     when /^show_expenses_(\d+)$/
       category_id = ::Regexp.last_match(1).to_i
       show_expenses(category_id)
+    when 'change_period_start_day'
+      handle_period_start_day
+    when /^set_period_start_day_(\d+)$/
+      day = ::Regexp.last_match(1).to_i
+      @user.setting.update!(period_start_day: day)
+      show_settings_menu(translation('settings.period_start_day.changed', day: day))
     else
       invoke_action(action)
     end
@@ -442,6 +450,42 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     show_expenses(expense.user_category_id, text, back_to_menu: true)
   end
 
+  def handle_period_start_day(*)
+    respond_with_markdown_message(
+      text: translation('settings.period_start_day.prompt'),
+      reply_markup: {
+        inline_keyboard: [
+          (1..7).map { |day| { text: day.to_s, callback_data: "set_period_start_day_#{day}" } },
+          (8..14).map { |day| { text: day.to_s, callback_data: "set_period_start_day_#{day}" } },
+          (15..21).map { |day| { text: day.to_s, callback_data: "set_period_start_day_#{day}" } },
+          (22..28).map { |day| { text: day.to_s, callback_data: "set_period_start_day_#{day}" } },
+          back_button('show_settings_menu')
+        ]
+      }
+    )
+  end
+
+  # Добавляем новый контекст для обработки ввода дня начала периода
+  def period_start_day!(message, *)
+    begin
+      day = Integer(message)
+      if day >= 1 && day <= 28
+        @user.setting.update!(period_start_day: day)
+        show_settings_menu(translation('settings.period_start_day.changed', day: day))
+      else
+        respond_with_markdown_message(
+          text: translation('settings.period_start_day.invalid') + "\n\n" + translation('settings.period_start_day.prompt'),
+          reply_markup: back_button_inline('show_settings_menu')
+        )
+      end
+    rescue ArgumentError
+      respond_with_markdown_message(
+        text: translation('settings.period_start_day.invalid') + "\n\n" + translation('settings.period_start_day.prompt'),
+        reply_markup: back_button_inline('show_settings_menu')
+      )
+    end
+  end
+
   private
 
   def find_user
@@ -566,6 +610,10 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         [
           { text: translation('settings.language.current', language: @user.setting.language || 'en'),
             callback_data: 'show_language_info' }
+        ],
+        [
+          { text: translation('settings.period_start_day.current', day: @user.setting.period_start_day),
+            callback_data: 'change_period_start_day' }
         ],
         back_button('keyboard!')
       ]

@@ -85,6 +85,11 @@ en:
         belarusian: "Belarusian"
         polish: "Polish"
         changed: "Language changed to %{language}"
+      period_start_day:
+        prompt: "Enter the first day of your period (1-28):"
+        current: "📅 Period start day: %{day}"
+        changed: "Period start day changed to %{day}"
+        invalid: "Please enter a number from 1 to 28."
     expenses:
       added: "✅ Expense added"
       report:

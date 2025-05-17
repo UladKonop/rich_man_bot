@@ -19,10 +19,10 @@ class ExpenseService
     end
   end
 
-  def get_expenses_report(category_id = nil, start_date = Date.current.beginning_of_month,
-                          end_date = Date.current.end_of_month)
+  def get_expenses_report(category_id = nil, start_date = nil, end_date = nil)
+    start_date, end_date = current_period_range unless start_date && end_date
     expenses = @user.expenses
-                    .between_dates(start_date, end_date)
+                    .between_dates(start_date, end_date - 1)
     expenses = expenses.for_category(category_id) if category_id
 
     total = expenses.total_amount
@@ -61,5 +61,18 @@ class ExpenseService
 
   def format_amount(amount)
     format('%.2f', amount)
+  end
+
+  def current_period_range
+    today = Date.current
+    start_day = @user.setting.period_start_day || 1
+    if today.day >= start_day
+      period_start = Date.new(today.year, today.month, start_day)
+    else
+      prev_month = today.prev_month
+      period_start = Date.new(prev_month.year, prev_month.month, start_day)
+    end
+    period_end = (period_start >> 1) # +1 месяц
+    [period_start, period_end]
   end
 end

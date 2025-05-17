@@ -54,6 +54,11 @@ pl:
         belarusian: "Białoruski"
         polish: "Polski"
         changed: "Język zmieniony na %{language}"
+      period_start_day:
+        prompt: "Wprowadź pierwszy dzień okresu (1-28):"
+        current: "📅 Pierwszy dzień okresu: %{day}"
+        changed: "Pierwszy dzień okresu zmieniony na %{day}"
+        invalid: "Wprowadź liczbę od 1 do 28."
     expenses:
       added: "✅ Wydatek dodany"
       report:
