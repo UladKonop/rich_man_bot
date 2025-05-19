@@ -82,8 +82,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       )
     when /^report_category_(\d+)$/
       category_id = ::Regexp.last_match(1).to_i
-      show_periods_menu
-      session[:selected_category_id] = category_id
+      show_expenses(category_id)
     when /^select_period_(\d{4}-\d{2}-\d{2})$/
       period_start = Date.parse(::Regexp.last_match(1))
       category_id = session[:selected_category_id]
@@ -162,11 +161,31 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   # Actions
 
-  def show_expenses_menu
-    save_context :keyboard!
+  def show_expenses_menu(message = nil)
+    expense_service = ExpenseService.new(@user)
+    categories_with_totals = @user.user_categories.map do |category|
+      _, total = expense_service.get_expenses_report(category.id)
+      {
+        text: "#{category.display_name}: #{format('%.2f', total)} #{@user.setting.currency}",
+        callback_data: "report_category_#{category.id}"
+      }
+    end.sort_by { |cat| -cat[:text].split(': ').last.to_f }
+
+    all_expenses_button = {
+      text: translation('expenses_menu.all'),
+      callback_data: 'report_category_all'
+    }
+
     respond_with_markdown_message(
-      text: translation('expenses_menu.prompt'),
-      reply_markup: expenses_menu_keyboard_markup
+      text: message || translation('expenses_menu.prompt'),
+      reply_markup: {
+        inline_keyboard: [
+          *categories_with_totals.map { |cat| [{ text: cat[:text], callback_data: cat[:callback_data] }] },
+          [all_expenses_button],
+          [{ text: translation('expenses_menu.previous_periods'), callback_data: 'show_periods_menu' }],
+          back_button('keyboard!')
+        ]
+      }
     )
   end
 
@@ -268,6 +287,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     expense_service = ExpenseService.new(@user)
     expenses_data = expense_service.get_expenses_report(category_id, period_start)
     text = message || expenses_data[0]
+    buttons = []
 
     if period_start
       # For previous periods, show category totals
@@ -299,12 +319,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     end
 
     respond_with_markdown_message(
-      text:,
+      text: text,
       reply_markup: {
-        inline_keyboard: [
-          *buttons,
-          back_button('show_expenses_menu')
-        ]
+        inline_keyboard: buttons + [back_button('show_expenses_menu')]
       }
     )
   end
