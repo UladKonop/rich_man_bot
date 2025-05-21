@@ -55,8 +55,12 @@ class ExpenseService
     message << I18n.t('telegram_webhooks.expenses.report.period',
                       start_date: start_date.strftime('%d.%m.%Y'),
                       end_date: end_date.strftime('%d.%m.%Y'))
-    message << I18n.t('telegram_webhooks.expenses.report.total', amount: format_amount(total),
-                                                                 currency: @user.setting.currency)
+    
+    # Only show total if we're showing a specific category
+    if category_id
+      message << I18n.t('telegram_webhooks.expenses.report.total', amount: format_amount(total),
+                                                                   currency: @user.setting.currency)
+    end
     message << ''
 
     message << I18n.t('telegram_webhooks.expenses.report.no_expenses') unless expenses.any?

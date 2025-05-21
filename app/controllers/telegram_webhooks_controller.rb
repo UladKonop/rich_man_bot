@@ -80,19 +80,22 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         text: translation('add_expense.enter_amount'),
         reply_markup: { inline_keyboard: expense_amount_keyboard_markup(category_id) }
       )
-    when /^report_category_(\d+)$/
-      category_id = ::Regexp.last_match(1).to_i
+    when /^report_category_(\d+|all)$/
+      category_id = ::Regexp.last_match(1)
+      category_id = category_id == 'all' ? nil : category_id.to_i
       show_expenses(category_id)
     when /^select_period_(\d{4}-\d{2}-\d{2})$/
       period_start = Date.parse(::Regexp.last_match(1))
       category_id = session[:selected_category_id]
       show_expenses(category_id, nil, period_start: period_start)
-    when /^show_expense_(\d+)$/
+    when /^show_expense_(\d+)(?:_(\w+))?$/
       expense_id = ::Regexp.last_match(1).to_i
-      show_expense(expense_id)
-    when /^edit_expense_(\d+)$/
+      context = ::Regexp.last_match(2)
+      show_expense(expense_id, context)
+    when /^edit_expense_(\d+)(?:_(\w+))?$/
       expense_id = ::Regexp.last_match(1).to_i
-      edit_expense(expense_id)
+      context = ::Regexp.last_match(2)
+      edit_expense(expense_id, context)
     when /^delete_expense_(\d+)$/
       expense_id = ::Regexp.last_match(1).to_i
       delete_expense(expense_id)
@@ -171,8 +174,10 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       }
     end.sort_by { |cat| -cat[:text].split(': ').last.to_f }
 
+    # Calculate total for all categories
+    _, all_total = expense_service.get_expenses_report
     all_expenses_button = {
-      text: translation('expenses_menu.all'),
+      text: "#{translation('expenses_menu.all')}: #{format('%.2f', all_total)} #{@user.setting.currency}",
       callback_data: 'report_category_all'
     }
 
@@ -313,8 +318,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       expenses = expenses.where(date: start_date..end_date)
       expenses = expenses.order(date: :desc)
 
+      context = category_id.nil? ? 'all' : category_id.to_s
       buttons = expenses.map do |expense|
-        [{ text: format('%.2f', expense.amount), callback_data: "show_expense_#{expense.id}" }]
+        [{ text: format('%.2f', expense.amount), callback_data: "show_expense_#{expense.id}_#{context}" }]
       end
     end
 
@@ -326,18 +332,24 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     )
   end
 
-  def show_expense(expense_id)
+  def show_expense(expense_id, context = nil)
     expense = @user.expenses.find(expense_id)
     text = "💰 #{format('%.2f', expense.amount)}\n📅 #{expense.date.strftime('%d.%m.%Y')}\n📝 #{expense.description}"
+    
+    # Получаем контекст из callback_data
+    callback_data = payload&.dig('callback_query', 'data')
+    context ||= callback_data&.split('_', 3)&.last
+    back_callback = context == 'all' ? 'report_category_all' : "report_category_#{context}"
+
     respond_with_markdown_message(
       text:,
       reply_markup: {
         inline_keyboard: [
           [
-            { text: '✏️', callback_data: "edit_expense_#{expense.id}" },
+            { text: '✏️', callback_data: "edit_expense_#{expense.id}_#{context}" },
             { text: '🗑️', callback_data: "delete_expense_#{expense.id}" }
           ],
-          back_button('show_expenses', expense.user_category_id)
+          back_button(back_callback)
         ]
       }
     )
@@ -482,7 +494,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     end
   end
 
-  # Клавиатура для шага ввода суммы с кнопками редактирования и удаления выбранной категории
+  # Keyboard for entering amount with edit and delete category buttons
   def expense_amount_keyboard_markup(category_id)
     [
       [
@@ -493,8 +505,14 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     ]
   end
 
-  def edit_expense(expense_id)
+  def edit_expense(expense_id, context = nil)
     expense = @user.expenses.find(expense_id)
+    
+    # Получаем контекст из callback_data
+    callback_data = payload&.dig('callback_query', 'data')
+    context ||= callback_data&.split('_', 3)&.last
+    back_callback = context == 'all' ? 'report_category_all' : "report_category_#{context}"
+
     respond_with_markdown_message(
       text: translation('expenses.edit_prompt', amount: expense.amount, description: expense.description),
       reply_markup: {
@@ -503,7 +521,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
             { text: translation('expenses.edit_amount'), callback_data: "edit_expense_amount_#{expense_id}" },
             { text: translation('expenses.edit_description'), callback_data: "edit_expense_description_#{expense_id}" }
           ],
-          back_button('show_expenses')
+          back_button(back_callback)
         ]
       }
     )
@@ -563,7 +581,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     )
   end
 
-  # Добавляем новый контекст для обработки ввода дня начала периода
+  # Add a new context for handling period start day input
   def period_start_day!(message, *)
     begin
       day = Integer(message)
@@ -652,7 +670,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     all_expenses_button = {
       text: "#{ICONS[:list]} #{translation('expenses_menu.all')} - #{format('%.2f',
                                                                             all_total)} #{@user.setting.currency}",
-      callback_data: 'category_all'
+      callback_data: 'report_category_all'
     }
 
     {
