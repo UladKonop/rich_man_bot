@@ -13,7 +13,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     settings: "\xF0\x9F\x94\xA7",
     money: "\xF0\x9F\x92\xB0",
     calendar: "\xF0\x9F\x93\x85",
-    list: "\xF0\x9F\x93\x9C"
+    list: "\xF0\x9F\x93\x9C",
+    link_arrow: "\xE2\x86\x97"
   }.freeze
 
   before_action :find_user
@@ -24,11 +25,11 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def keyboard!(value = nil, *)
     if value
-      show_add_expense if main_menu_buttons[:add_expense].include?(value)
-      show_expenses_menu if main_menu_buttons[:expenses].include?(value)
-      show_instruction if main_menu_buttons[:instruction].include?(value)
-      show_settings_menu if main_menu_buttons[:settings].include?(value)
-      # buy_subscription if main_menu_buttons[:buy_subscription].include?(value)
+      show_add_expense if main_menu_buttons[:add_expense]&.include?(value)
+      show_expenses_menu if main_menu_buttons[:expenses]&.include?(value)
+      show_instruction if main_menu_buttons[:instruction]&.include?(value)
+      show_settings_menu if main_menu_buttons[:settings]&.include?(value)
+      buy_subscription if main_menu_buttons[:buy_subscription]&.include?(value)
     else
       show_main_menu
     end
@@ -273,8 +274,10 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     save_context :keyboard!
     user_subscription_payed_for = @user.subscription.payed_for
     text = user_subscription_payed_for < DateTime.now ? 'buy.prompt_outdated' : 'buy.prompt'
-    respond_with_markdown_message(text: translation(text, date: user_subscription_payed_for.strftime('%d.%m.%Y')),
-                                  reply_markup: buy_subscription_keyboard_markup)
+    respond_with_markdown_message(
+      text: translation(text, date: user_subscription_payed_for.strftime('%d.%m.%Y')),
+      reply_markup: buy_subscription_keyboard_markup
+    )
   end
 
   def show_expenses_for_category(category_id)
@@ -637,6 +640,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     add_expense_button = "#{main_menu_buttons[:add_expense]} #{ICONS[:credit_card]}"
     instruction_button = "#{main_menu_buttons[:instruction]} #{ICONS[:instruction]}"
     settings_button = "#{main_menu_buttons[:settings]} #{ICONS[:settings]}"
+    subscription_button = "#{main_menu_buttons[:buy_subscription]} #{ICONS[:credit_card]}"
 
     buttons = []
     buttons << if @user.setting.active?
@@ -645,6 +649,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
                  [expenses_button]
                end
     buttons << [settings_button, instruction_button]
+    buttons << [subscription_button]
 
     {
       keyboard: buttons,
@@ -697,7 +702,8 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       expenses: translation('main_menu.buttons.expenses'),
       add_expense: translation('main_menu.buttons.add_expense'),
       instruction: translation('main_menu.buttons.instruction'),
-      settings: translation('main_menu.buttons.settings')
+      settings: translation('main_menu.buttons.settings'),
+      buy_subscription: translation('main_menu.buttons.buy_subscription')
     }
   end
 
@@ -732,6 +738,14 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
           { text: translation('settings.period_start_day.current', day: @user.setting.period_start_day),
             callback_data: 'change_period_start_day' }
         ],
+        back_button('keyboard!')
+      ]
+    }
+  end
+
+  def buy_subscription_keyboard_markup
+    {
+      inline_keyboard: [
         back_button('keyboard!')
       ]
     }

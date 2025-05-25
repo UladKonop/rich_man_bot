@@ -41,8 +41,13 @@ pl:
     invalid_expense_format: "Nieprawidłowy format wydatku. Użyj formatu: kwota kategoria opis"
     instruction:
       main: |
-        Cześć! Jestem Richman bot
+        Cześć! Jestem Treasure Tracker bot
         Pomogę Ci zarządzać swoimi wydatkami.
+
+        Masz 30-dniowy okres próbny do testowania wszystkich funkcji.
+        Po okresie próbnym będziesz musiał wykupić subskrypcję, aby kontynuować korzystanie z bota.
+
+        W sprawach subskrypcji lub opinii prosimy o kontakt z @Azsxdcfrewq
     settings:
       prompt: "Ustawienia bota:"
       currency:

@@ -72,8 +72,13 @@ en:
     invalid_expense_format: "Invalid expense format. Use format: amount category description"
     instruction:
       main: |
-        Hello! I'm Richman bot
+        Hello! I'm Treasure Tracker bot
         I'll help you manage your expenses.
+
+        You have a 30-day trial period to test all features.
+        After the trial period, you'll need to purchase a subscription to continue using the bot.
+
+        For subscription questions or feedback, please contact @Azsxdcfrewq
     settings:
       prompt: "Bot settings:"
       currency:

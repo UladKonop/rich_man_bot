@@ -17,7 +17,7 @@ class Subscription < ApplicationRecord
   }.freeze
 
   PERIODS = {
-    free_tier: 10.days,
+    free_tier: 30.days,
     month: 1.month,
     three_month: 3.month,
     six_month: 6.month
