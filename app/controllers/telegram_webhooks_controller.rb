@@ -293,29 +293,32 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def show_expenses(category_id = nil, message = nil, back_to_menu: false, period_start: nil)
     expense_service = ExpenseService.new(@user)
-    expenses_data = expense_service.get_expenses_report(category_id, period_start)
-    text = message || expenses_data[0]
     buttons = []
 
     if period_start
-      # For previous periods, show category totals
+      # Use service method to get period range
+      period_range = expense_service.period_range_for(period_start)
+      period_start, period_end = period_range
+
+      # Show only the period at the top
+      text = translation('expenses.report.period', start_date: I18n.l(period_start, format: '%d.%m.%Y'), end_date: I18n.l(period_end, format: '%d.%m.%Y')) + "\n\n"
+
+      # List of categories and total
       categories_with_totals = @user.user_categories.map do |category|
         _, total = expense_service.get_expenses_report(category.id, period_start)
         [category, total]
       end.sort_by { |_, total| -total }
 
-      # Add category totals to the message
-      text += "\n\n"
       categories_with_totals.each do |category, total|
         text += "#{category.display_name}: #{format('%.2f', total)} #{@user.setting.currency}\n"
       end
 
-      # Add total for all categories
       _, all_total = expense_service.get_expenses_report(nil, period_start)
       text += "\n#{translation('expenses_menu.all')}: #{format('%.2f', all_total)} #{@user.setting.currency}"
     else
-      # For current period, show expense buttons
-      start_date, end_date = expense_service.send(:current_period_range)
+      expenses_data = expense_service.get_expenses_report(category_id)
+      text = message || expenses_data[0]
+      start_date, end_date = expense_service.current_period_range
       expenses = @user.expenses
       expenses = expenses.where(user_category_id: category_id) if category_id
       expenses = expenses.where(date: start_date..end_date)
@@ -339,7 +342,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     expense = @user.expenses.find(expense_id)
     text = "💰 #{format('%.2f', expense.amount)}\n📅 #{expense.date.strftime('%d.%m.%Y')}\n📝 #{expense.description}"
     
-    # Получаем контекст из callback_data
+    # Get context from callback_data
     callback_data = payload&.dig('callback_query', 'data')
     context ||= callback_data&.split('_', 3)&.last
     back_callback = context == 'all' ? 'report_category_all' : "report_category_#{context}"
@@ -511,7 +514,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def edit_expense(expense_id, context = nil)
     expense = @user.expenses.find(expense_id)
     
-    # Получаем контекст из callback_data
+    # Get context from callback_data
     callback_data = payload&.dig('callback_query', 'data')
     context ||= callback_data&.split('_', 3)&.last
     back_callback = context == 'all' ? 'report_category_all' : "report_category_#{context}"
@@ -534,7 +537,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     expense = @user.expenses.find(expense_id)
     category_id = expense.user_category_id
     expense.destroy!
-    # Показываем полный отчёт, но с сообщением об удалении
+    # Show full report, but with a deletion message
     expenses_data = ExpenseService.new(@user).get_expenses_report(category_id)
     text = "#{translation('expenses.deleted')}\n\n#{expenses_data[0]}"
     show_expenses(category_id, text, back_to_menu: true)

@@ -35,6 +35,27 @@ class ExpenseService
     [message, total]
   end
 
+  def period_range_for(date)
+    start_day = @user.setting.period_start_day || 1
+    if date.day >= start_day
+      period_start = Date.new(date.year, date.month, start_day)
+    else
+      prev_month = date.prev_month
+      period_start = Date.new(prev_month.year, prev_month.month, start_day)
+    end
+
+    period_end = if period_start.month == 12
+                  Date.new(period_start.year + 1, 1, start_day) - 1.day
+                else
+                  Date.new(period_start.year, period_start.month + 1, start_day) - 1.day
+                end
+    [period_start, period_end]
+  end
+
+  def current_period_range
+    period_range_for(Date.current)
+  end
+
   private
 
   def format_expense_message(expense)
@@ -70,25 +91,5 @@ class ExpenseService
 
   def format_amount(amount)
     format('%.2f', amount)
-  end
-
-  def current_period_range
-    today = Date.current
-    start_day = @user.setting.period_start_day || 1
-    if today.day >= start_day
-      period_start = Date.new(today.year, today.month, start_day)
-    else
-      prev_month = today.prev_month
-      period_start = Date.new(prev_month.year, prev_month.month, start_day)
-    end
-
-    # Calculate end date as start_day - 1 of next month
-    period_end = if period_start.month == 12
-                  Date.new(period_start.year + 1, 1, start_day) - 1.day
-                else
-                  Date.new(period_start.year, period_start.month + 1, start_day) - 1.day
-                end
-
-    [period_start, period_end]
   end
 end
