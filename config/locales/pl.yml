@@ -92,4 +92,6 @@ pl:
       updated: "✅ Kategoria zaktualizowana"
       deleted: "✅ Kategoria usunięta"
       invalid_emoji: "❌ Proszę wprowadzić jedno emoji"
-      cannot_delete_has_expenses: "❌ Nie można usunąć kategorii, która zawiera wydatki" 
+      cannot_delete_has_expenses: "❌ Nie można usunąć kategorii, która zawiera wydatki"
+      name_too_long: "❌ Nazwa jest za długa. Maksymalnie 50 znaków."
+      name_empty: "❌ Nazwa nie może być pusta."

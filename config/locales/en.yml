@@ -124,3 +124,5 @@ en:
       deleted: "✅ Category deleted"
       invalid_emoji: "❌ Please enter a single emoji"
       cannot_delete_has_expenses: "❌ Cannot delete category with expenses"
+      name_too_long: "❌ Name is too long. Maximum 50 characters."
+      name_empty: "❌ Name cannot be empty."

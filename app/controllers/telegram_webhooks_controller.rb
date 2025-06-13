@@ -56,7 +56,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     when :edit_expense_description
       edit_expense_description(message)
     when :change_currency!
-      @user.setting.update(currency: message)
+      @user.setting.update(currency: payload['text'])
       show_settings_menu
     when :period_start_day
       period_start_day!(message)
@@ -428,8 +428,26 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     )
   end
 
-  def add_category_name(message)
-    session[:category_name] = message
+  def add_category_name(message, *_args)
+    name = payload['text'].strip
+    
+    if name.blank?
+      respond_with_markdown_message(
+        text: "#{translation('categories.name_empty')}\n\n#{translation('categories.add_name')}"
+      )
+      save_context :add_category_name
+      return
+    end
+    
+    if name.length > 50
+      respond_with_markdown_message(
+        text: "#{translation('categories.name_too_long')}\n\n#{translation('categories.add_name')}"
+      )
+      save_context :add_category_name
+      return
+    end
+    
+    session[:category_name] = name
     save_context :add_category_emoji
     respond_with_markdown_message(
       text: translation('categories.add_emoji'),
@@ -437,18 +455,32 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     )
   end
 
-  def add_category_emoji(message)
-    emoji = message
+  def add_category_emoji(message, *_args)
+    emoji = payload['text']
     name = session[:category_name]
     if emoji.match?(/\p{Emoji}/) && name.present?
-      @user.user_categories.create!(name:, emoji:)
-      session.delete(:category_name)
-      show_categories
+      begin
+        @user.user_categories.create!(name:, emoji:)
+        session.delete(:category_name)
+        show_categories(translation('categories.added'))
+      rescue ActiveRecord::RecordInvalid => e
+        error_message = if e.record.errors[:name].include?("is too long (maximum is 50 characters)")
+                         translation('categories.name_too_long')
+                       elsif e.record.errors[:name].include?("can't be blank")
+                         translation('categories.name_empty')
+                       else
+                         "❌ #{e.record.errors.full_messages.join(', ')}"
+                       end
+        respond_with_markdown_message(
+          text: "#{error_message}\n\n#{translation('categories.add_emoji')}"
+        )
+        save_context :add_category_emoji
+      end
     else
       respond_with_markdown_message(
-        text: translation('categories.invalid_emoji'),
-        reply_markup: back_button_inline('keyboard!')
+        text: "#{translation('categories.invalid_emoji')}\n\n#{translation('categories.add_emoji')}"
       )
+      save_context :add_category_emoji
     end
   end
 
@@ -462,9 +494,27 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     )
   end
 
-  def edit_category_name(message)
+  def edit_category_name(message, *_args)
     @category = @user.user_categories.find(session[:editing_category_id])
-    @category.update!(name: message)
+    name = payload['text'].strip
+    
+    if name.blank?
+      respond_with_markdown_message(
+        text: "#{translation('categories.name_empty')}\n\n#{translation('categories.edit_name', current_name: @category.name)}"
+      )
+      save_context :edit_category_name
+      return
+    end
+    
+    if name.length > 50
+      respond_with_markdown_message(
+        text: "#{translation('categories.name_too_long')}\n\n#{translation('categories.edit_name', current_name: @category.name)}"
+      )
+      save_context :edit_category_name
+      return
+    end
+    
+    @category.update!(name: name)
     save_context :edit_category_emoji
     respond_with_markdown_message(
       text: translation('categories.edit_emoji', current_emoji: @category.emoji),
@@ -472,18 +522,18 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     )
   end
 
-  def edit_category_emoji(message)
+  def edit_category_emoji(message, *_args)
     @category = @user.user_categories.find(session[:editing_category_id])
-    emoji = message
+    emoji = payload['text']
     if emoji.match?(/\p{Emoji}/)
       @category.update!(emoji:)
       session.delete(:editing_category_id)
       show_categories(translation('categories.updated'))
     else
       respond_with_markdown_message(
-        text: translation('categories.invalid_emoji'),
-        reply_markup: back_button_inline("edit_category_#{@category.id}")
+        text: "#{translation('categories.invalid_emoji')}\n\n#{translation('categories.edit_emoji', current_emoji: @category.emoji)}"
       )
+      save_context :edit_category_emoji
     end
   end
 
@@ -545,7 +595,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def edit_expense_amount(message, *_args)
     expense_id = session[:editing_expense_id]
-    amount = message.gsub(',', '.').to_f
+    amount = payload['text'].gsub(',', '.').to_f
 
     if amount.positive?
       expense = @user.expenses.find(expense_id)
@@ -565,7 +615,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   def edit_expense_description(message, *_args)
     expense_id = session[:editing_expense_id]
     expense = @user.expenses.find(expense_id)
-    expense.update!(description: message)
+    expense.update!(description: payload['text'])
     session.delete(:editing_expense_id)
     expenses_data = ExpenseService.new(@user).get_expenses_report(expense.user_category_id)
     text = "#{translation('expenses.updated')}\n\n#{expenses_data[0]}"
@@ -590,7 +640,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   # Add a new context for handling period start day input
   def period_start_day!(message, *)
     begin
-      day = Integer(message)
+      day = Integer(payload['text'])
       if day >= 1 && day <= 28
         @user.setting.update!(period_start_day: day)
         show_settings_menu(translation('settings.period_start_day.changed', day: day))
