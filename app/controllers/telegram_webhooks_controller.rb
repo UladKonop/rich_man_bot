@@ -24,6 +24,17 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def keyboard!(value = nil, *)
+    # Check if there's a successful_payment in the message
+    if payload['successful_payment']
+      status_message = successful_payment(payload['successful_payment'])
+      save_context :keyboard!
+      respond_with_markdown_message(
+        text: status_message,
+        reply_markup: main_keyboard_markup
+      )
+      return
+    end
+
     if value
       show_add_expense if main_menu_buttons[:add_expense]&.include?(value)
       show_expenses_menu if main_menu_buttons[:expenses]&.include?(value)
@@ -40,6 +51,17 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def message(message)
+    # Check if there's a successful_payment in the message
+    if payload['message'] && payload['message']['successful_payment']
+      status_message = successful_payment(payload['message']['successful_payment'])
+      save_context :keyboard!
+      respond_with_markdown_message(
+        text: status_message,
+        reply_markup: main_keyboard_markup
+      )
+      return
+    end
+
     case session[:context]
     when :add_category_name
       add_category_name(message)
@@ -158,6 +180,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       day = ::Regexp.last_match(1).to_i
       @user.setting.update!(period_start_day: day)
       show_settings_menu(translation('settings.period_start_day.changed', day: day))
+    when /^buy_subscription_(\w+)$/
+      plan_key = ::Regexp.last_match(1)
+      send_invoice_for_subscription(plan_key)
     else
       invoke_action(action)
     end
@@ -272,11 +297,40 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def buy_subscription
     save_context :keyboard!
-    user_subscription_payed_for = @user.subscription.payed_for
-    text = user_subscription_payed_for < DateTime.now ? 'buy.prompt_outdated' : 'buy.prompt'
+    subscription_service = SubscriptionService.new(@user)
+    status = subscription_service.subscription_status
+    
+    text = status[:expired] ? 'buy.prompt_outdated' : 'buy.prompt'
+    
+    # Create buttons for each subscription plan
+    keyboard = {
+      inline_keyboard: SubscriptionPlan.all.map do |key, plan|
+        monthly_price = SubscriptionPlan.monthly_price(plan)
+        savings = SubscriptionPlan.savings(plan)
+        
+        button_text = if savings.zero?
+          translation('buy.plan_button_simple',
+            stars: plan[:stars],
+            days: plan[:duration].to_i / 1.day,
+            monthly_price: monthly_price
+          )
+        else
+          translation('buy.plan_button_with_savings',
+            stars: plan[:stars],
+            days: plan[:duration].to_i / 1.day,
+            monthly_price: monthly_price,
+            savings: savings,
+            discount: plan[:discount]
+          )
+        end
+        
+        [{ text: button_text, callback_data: "buy_subscription_#{key}" }]
+      end + [back_button('keyboard!')]
+    }
+    
     respond_with_markdown_message(
-      text: translation(text, date: user_subscription_payed_for.strftime('%d.%m.%Y')),
-      reply_markup: buy_subscription_keyboard_markup
+      text: translation(text, date: subscription_service.format_expiry_date),
+      reply_markup: keyboard
     )
   end
 
@@ -361,8 +415,9 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     )
   end
 
-  def show_main_menu(text = translation('main_menu.prompt'))
+  def show_main_menu(additional_text = nil)
     save_context :keyboard!
+    text = additional_text ? "#{additional_text}\n\n#{translation('main_menu.prompt')}" : translation('main_menu.prompt')
     respond_with_markdown_message(text:, reply_markup: main_keyboard_markup)
   end
 
@@ -637,6 +692,38 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     )
   end
 
+  # Handle pre_checkout_query - required!
+  def pre_checkout_query(data)
+    payload_parts = data['invoice_payload'].split('_')
+    if payload_parts.first == 'subscription' && payload_parts.last.present?
+      # Confirm payment
+      bot.answer_pre_checkout_query(
+        pre_checkout_query_id: data['id'],
+        ok: true
+      )
+    else
+      # Reject unknown payment
+      bot.answer_pre_checkout_query(
+        pre_checkout_query_id: data['id'],
+        ok: false,
+        error_message: 'Unknown payment'
+      )
+    end
+  end
+
+  # Handle successful payment
+  def successful_payment(payment)
+    payment_service = PaymentService.new(@user)
+    
+    if payment_service.process_subscription_payment(payment)
+      # Return success message
+      translation('buy.payment_success')
+    else
+      # Return error message
+      translation('buy.payment_error')
+    end
+  end
+
   # Add a new context for handling period start day input
   def period_start_day!(message, *)
     begin
@@ -661,12 +748,38 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   private
 
   def find_user
-    @user = User.find_or_create_by(chat_id: chat['id']) do |user|
-      user.name = chat['username']
+    # Different update types have different data structures
+    if payload['pre_checkout_query']
+      # For pre_checkout_query
+      user_data = payload['pre_checkout_query']['from']
+      chat_id = user_data['id']
+      username = user_data['username']
+      language_code = user_data['language_code']
+    elsif payload['successful_payment']
+      # For successful_payment
+      user_data = payload['from']
+      chat_id = user_data['id']
+      username = user_data['username']
+      language_code = user_data['language_code']
+    elsif chat.present?
+      # For regular messages and callback_query
+      chat_id = chat['id']
+      username = chat['username']
+      language_code = payload['from']&.dig('language_code')
+    else
+      # Fallback for other update types
+      user_data = payload['from']
+      chat_id = user_data['id']
+      username = user_data['username']
+      language_code = user_data['language_code']
+    end
+
+    @user = User.find_or_create_by(chat_id: chat_id) do |user|
+      user.name = username || "User_#{chat_id}"
     end
 
     # Get language from Telegram
-    telegram_language = payload['from']['language_code']&.to_sym
+    telegram_language = language_code&.to_sym
     supported_language = if telegram_language && I18n.available_locales.include?(telegram_language)
                            telegram_language
                          else
@@ -680,7 +793,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       @user.create_setting!(language: supported_language.to_s)
     end
 
-    @user.update(name: chat['username']) unless @user.name.present?
+    @user.update(name: username || "User_#{chat_id}") unless @user.name.present?
     I18n.locale = @user.setting.language&.to_sym || :en
   end
 
@@ -802,5 +915,27 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         back_button('keyboard!')
       ]
     }
+  end
+
+  def send_invoice_for_subscription(plan_key)
+    begin
+      payment_service = PaymentService.new(@user)
+      invoice_data = payment_service.create_subscription_invoice(plan_key)
+      
+      respond_with :invoice,
+        **invoice_data,
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: translation('buy.pay_button'), pay: true }],
+            back_button('buy_subscription')
+          ]
+        }
+    rescue => e
+      Rails.logger.error "Failed to send invoice: #{e.message}"
+      respond_with_markdown_message(
+        text: translation('buy.invoice_error'),
+        reply_markup: back_button_inline('buy_subscription')
+      )
+    end
   end
 end
