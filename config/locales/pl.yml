@@ -22,18 +22,19 @@ pl:
       settings: "Ustawienia"
       buy_subscription: "Subskrypcja"
     buy:
-      prompt: "Obecna subskrypcja jest ważna do %{date}"
+      prompt: "Aktualna subskrypcja jest ważna do %{date}"
+      info: |
+        💳 Płatność odbywa się za pomocą Telegram Stars — wewnętrznej waluty Telegram do wygodnych i bezpiecznych płatności w komunikatorze. Nie ma automatycznego odnowienia.
+
+        🗓️ Możesz przedłużyć subskrypcję w dowolnym momencie. Odpowiednia liczba dni zostanie dodana do pozostałego okresu.
+
+        💡 Możesz kupić gwiazdki bez prowizji Apple / Google w oficjalnym bocie @PremiumBot.
       need_subscription: "Najpierw musisz wykupić subskrypcję"
       buy_button: "Przedłuż"
       prompt_outdated: "Subskrypcja wygasła %{date}"
-      plan_button_simple: "%{stars} ⭐️ na %{days} dni\n(~%{monthly_price} ⭐️/miesiąc)"
-      plan_button_with_savings: "%{stars} ⭐️ na %{days} dni\n(~%{monthly_price} ⭐️/miesiąc, oszczędź %{savings} ⭐️, -%{discount}%%)"
-      invoice_title_month: "Subskrypcja na 30 dni"
-      invoice_title_three_month: "Subskrypcja na 90 dni"
-      invoice_title_six_month: "Subskrypcja na 180 dni"
-      invoice_title_year: "Subskrypcja na 365 dni"
-      invoice_description_simple: "Subskrypcja Treasure Tracker na %{days} dni\n~%{monthly_price} ⭐️ miesięcznie"
-      invoice_description_with_savings: "Subskrypcja Treasure Tracker na %{days} dni\n~%{monthly_price} ⭐️ miesięcznie\nOszczędź %{savings} ⭐️!"
+      plan_button: "%{days} dni • %{stars} ⭐️%{discount_part}"
+      invoice_title: "Płatność za subskrypcję"
+      invoice_description: "Subskrypcja na %{days} dni"
       subscription_label_month: "Subskrypcja na 30 dni"
       subscription_label_three_month: "Subskrypcja na 90 dni"
       subscription_label_six_month: "Subskrypcja na 180 dni"

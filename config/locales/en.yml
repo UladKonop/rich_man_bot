@@ -54,17 +54,18 @@ en:
       buy_subscription: "Subscription"
     buy:
       prompt: "Current subscription is valid until %{date}"
+      info: |
+        💳 Payment is made using Telegram Stars — Telegram's internal currency for convenient and secure in-app payments. There is no automatic renewal.
+
+        🗓️ You can extend your subscription at any time. The corresponding number of days will be added to the remaining period.
+
+        💡 You can purchase stars without Apple / Google commission in the official @PremiumBot.
       need_subscription: "You need to purchase a subscription first"
       buy_button: "Extend"
       prompt_outdated: "Subscription expired %{date}"
-      plan_button_simple: "%{stars} ⭐️ for %{days} days\n(~%{monthly_price} ⭐️/month)"
-      plan_button_with_savings: "%{stars} ⭐️ for %{days} days\n(~%{monthly_price} ⭐️/month, save %{savings} ⭐️, -%{discount}%%)"
-      invoice_title_month: "30-day Subscription"
-      invoice_title_three_month: "90-day Subscription"
-      invoice_title_six_month: "180-day Subscription"
-      invoice_title_year: "365-day Subscription"
-      invoice_description_simple: "Treasure Tracker subscription for %{days} days\n~%{monthly_price} ⭐️ per month"
-      invoice_description_with_savings: "Treasure Tracker subscription for %{days} days\n~%{monthly_price} ⭐️ per month\nSave %{savings} ⭐️!"
+      plan_button: "%{days} days • %{stars} ⭐️%{discount_part}"
+      invoice_title: "Subscription Payment"
+      invoice_description: "%{days} days subscription"
       subscription_label_month: "30-day Subscription"
       subscription_label_three_month: "90-day Subscription"
       subscription_label_six_month: "180-day Subscription"

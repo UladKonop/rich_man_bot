@@ -21,27 +21,17 @@ class PaymentService
 
   def create_subscription_invoice(plan_key)
     plan = SubscriptionPlan.find(plan_key)
-    monthly_price = SubscriptionPlan.monthly_price(plan)
-    savings = SubscriptionPlan.savings(plan)
 
-    description = if savings.zero?
-      I18n.t('telegram_webhooks.buy.invoice_description_simple',
-        days: plan[:duration].to_i / 1.day,
-        monthly_price: monthly_price
-      )
-    else
-      I18n.t('telegram_webhooks.buy.invoice_description_with_savings',
-        days: plan[:duration].to_i / 1.day,
-        monthly_price: monthly_price,
-        savings: savings
-      )
-    end
+    description = I18n.t('telegram_webhooks.buy.invoice_description',
+      days: plan[:duration].to_i / 1.day
+    )
 
     {
-      title: I18n.t("telegram_webhooks.buy.invoice_title_#{plan_key}"),
+      provider_token: '', # Empty for Telegram Stars
+      start_parameter: 'subscription',
+      title: I18n.t("telegram_webhooks.buy.invoice_title"),
       description: description,
       payload: "subscription_payment_#{plan_key}",
-      provider_token: '', # Empty for Telegram Stars
       currency: 'XTR',
       prices: [
         { 

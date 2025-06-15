@@ -302,34 +302,25 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     
     text = status[:expired] ? 'buy.prompt_outdated' : 'buy.prompt'
     
+    text = "#{translation(text, date: subscription_service.format_expiry_date)}\n\n#{translation('buy.info')}"
     # Create buttons for each subscription plan
     keyboard = {
       inline_keyboard: SubscriptionPlan.all.map do |key, plan|
         monthly_price = SubscriptionPlan.monthly_price(plan)
-        savings = SubscriptionPlan.savings(plan)
         
-        button_text = if savings.zero?
-          translation('buy.plan_button_simple',
-            stars: plan[:stars],
-            days: plan[:duration].to_i / 1.day,
-            monthly_price: monthly_price
-          )
-        else
-          translation('buy.plan_button_with_savings',
-            stars: plan[:stars],
-            days: plan[:duration].to_i / 1.day,
-            monthly_price: monthly_price,
-            savings: savings,
-            discount: plan[:discount]
-          )
-        end
+        button_text = translation('buy.plan_button',
+          stars: plan[:stars],
+          days: plan[:duration].to_i / 1.day,
+          monthly_price: monthly_price,
+          discount_part: plan[:discount].zero? ? '' : " • -#{plan[:discount]}%"
+        )
         
         [{ text: button_text, callback_data: "buy_subscription_#{key}" }]
       end + [back_button('keyboard!')]
     }
     
     respond_with_markdown_message(
-      text: translation(text, date: subscription_service.format_expiry_date),
+      text: text,
       reply_markup: keyboard
     )
   end
