@@ -21,7 +21,7 @@ class ExpenseService
 
   def get_expenses_report(category_id = nil, period_start = nil)
     start_date, end_date = if period_start
-                            [period_start, period_start.next_month - 1.day]
+                            period_range_for(period_start)
                           else
                             current_period_range
                           end
@@ -54,6 +54,19 @@ class ExpenseService
 
   def current_period_range
     period_range_for(Date.current)
+  end
+
+  def get_expenses(category_id = nil, period_start = nil)
+    start_date, end_date = if period_start
+                            period_range_for(period_start)
+                          else
+                            current_period_range
+                          end
+
+    expenses = @user.expenses
+                    .between_dates(start_date, end_date)
+    expenses = expenses.for_category(category_id) if category_id
+    expenses.order(date: :desc)
   end
 
   private

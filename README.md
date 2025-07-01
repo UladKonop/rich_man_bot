@@ -33,7 +33,11 @@ Telegram.bot.get_webhook_info
 ```
 * ...
 
+# айди пользователей вместе с количеством растрат за последние 30 дней
 User.joins(:expenses).where('expenses.date >= ?', 30.days.ago.to_date).group(:id).pluck(:id, 'COUNT(expenses.id)')
+
+# востановление базы из прода в локальную
+psql -d rich_man_bot_development -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" && psql -d rich_man_bot_development < ./15-06-2025-rich-man-bot-backup.sql 
 
 # TODO
 - скрыть кнопку "предыдущие периоды" если таких не было
