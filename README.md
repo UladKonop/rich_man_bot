@@ -2,6 +2,8 @@
 
 Rich Man Bot is a personal finance assistant Telegram bot designed to help you track your expenses, manage categories, and analyze your spending habits. With features like period-based summaries, category management, and export/import options, it makes budgeting and financial tracking simple and accessible right from your chat.
 
+👉 Try it on Telegram: [@treasure_tracker_bot](https://t.me/treasure_tracker_bot)
+
 ## 🚀 Deployment Instructions
 
 ```bash
