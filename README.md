@@ -1,29 +1,29 @@
-# README
+# Rich Man Bot
 
-* Deployment instructions
+Rich Man Bot is a personal finance assistant Telegram bot designed to help you track your expenses, manage categories, and analyze your spending habits. With features like period-based summaries, category management, and export/import options, it makes budgeting and financial tracking simple and accessible right from your chat.
+
+## 🚀 Deployment Instructions
+
+```bash
 docker-compose -f docker-compose.prod.yml build
 docker-compose -f docker-compose.prod.yml up -d
 docker-compose -f docker-compose.prod.yml exec web rails db:migrate
 docker-compose -f docker-compose.prod.yml exec web bin/delayed_job start
 docker-compose -f docker-compose.prod.yml exec web rake telegram:bot:set_webhook
 
+# To stop and remove containers:
 docker-compose down --remove-orphans 
+```
 
-# poller startup
-# docker-compose -f docker-compose.prod.yml exec web bin/telegram_bot start
-# docker-compose -f docker-compose.prod.yml exec web bin/rails telegram:bot:poller
+---
 
-# poller startup alternative
-# docker-compose -f docker-compose.prod.yml exec web rails c
-#   Telegram::Bot::UpdatesPoller.new(Telegram.bots[:default], TelegramWebhooksController).start
+## 🤖 Telegram Bot Setup
 
-# or just uncomment poller section in docker.compose.prod.yml  
+### Webhook Setup
 
-https://api.telegram.org/botTOKEN/setWebhook - remove webhook for poller using
+- [Telegram Webhooks Documentation](https://core.telegram.org/bots/webhooks)
+- [https-portal (SSL)](https://github.com/steveltn/https-portal)
 
-* webhooks setup
-https://core.telegram.org/bots/webhooks
-https://github.com/steveltn/https-portal
 ```ruby
 url = "https://richmanbot.space/telegram/TOKEN"
 Telegram.bot.set_webhook(url: url)
@@ -31,25 +31,60 @@ Telegram.bot.set_webhook(url: url, certificate: File.open('./YOURPUBLIC.pem'))
 Telegram.bot.delete_webhook
 Telegram.bot.get_webhook_info
 ```
-* ...
 
-# айди пользователей вместе с количеством растрат за последние 30 дней
-User.joins(:expenses).where('expenses.date >= ?', 30.days.ago.to_date).group(:id).pluck(:id, 'COUNT(expenses.id)')
+### Poller Startup
 
-# востановление базы из прода в локальную
-psql -d rich_man_bot_development -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" && psql -d rich_man_bot_development < ./15-06-2025-rich-man-bot-backup.sql 
+```bash
+# Option 1
+docker-compose -f docker-compose.prod.yml exec web bin/telegram_bot start
+docker-compose -f docker-compose.prod.yml exec web bin/rails telegram:bot:poller
 
-# TODO
-- скрыть кнопку "предыдущие периоды" если таких не было
-- добавить возможность редактировать дату растраты
-- выводить общую сумму после каждого ввода за текущий период
-- обновить локали, добавить лучшее описание функций
-- сделать инструкцию
-- придумать название для бота и иконку
-- придумать описание для бота
-- добавить парсер для ввода всегда
-- добавить синонимы-сокращения к категории
-- добавить экспорт
-- импорт?
-- перенести сумму по категории вниз(может уже и не нужно, потому что внешний вид внутри категории уже сильно компактнее стал)
-- решить как будет работать удаление категории(только пустая или как-то ещё)
+# Option 2
+docker-compose -f docker-compose.prod.yml exec web rails c
+# In Rails console:
+Telegram::Bot::UpdatesPoller.new(Telegram.bots[:default], TelegramWebhooksController).start
+```
+
+> 💡 You can also uncomment the poller section in `docker-compose.prod.yml` for automatic startup.
+
+### Remove Webhook for Poller Mode
+
+- Use: `https://api.telegram.org/botTOKEN/setWebhook`
+
+---
+
+## 🛠️ Useful Commands
+
+### Get User IDs with Expense Count (Last 30 Days)
+
+```ruby
+User.joins(:expenses)
+    .where('expenses.date >= ?', 30.days.ago.to_date)
+    .group(:id)
+    .pluck(:id, 'COUNT(expenses.id)')
+```
+
+### Restore Database from Production to Local
+
+```bash
+psql -d rich_man_bot_development -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+psql -d rich_man_bot_development < ./15-06-2025-rich-man-bot-backup.sql 
+```
+
+---
+
+## 📋 TODO
+
+- [ ] Hide the "Previous Periods" button if there are no previous periods
+- [ ] Add the ability to edit the expense date
+- [ ] Display the total sum after each entry for the current period
+- [ ] Update locales and improve function descriptions
+- [ ] Write a user guide/instructions
+- [ ] Come up with a name and icon for the bot
+- [ ] Write a description for the bot
+- [ ] Always enable the input parser
+- [ ] Add synonyms/abbreviations for categories
+- [ ] Add export functionality
+- [ ] Import functionality?
+- [ ] Move the category total to the bottom (may not be needed anymore due to compact view)
+- [ ] Decide how category deletion should work (only if empty, or otherwise?)
